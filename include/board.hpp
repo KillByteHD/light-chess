@@ -99,14 +99,20 @@ namespace light_chess
             brd[6][i] = make_pawn(BLACK);
         }
 
-        brd["a1"] = make_rook(WHITE);
-        brd["a2"] = make_knight(WHITE);
-        brd["a3"] = make_bishop(WHITE);
-        brd["a4"] = make_queen(WHITE);
-        brd["a5"] = make_king(WHITE);
-        brd["a6"] = make_bishop(WHITE);
-        brd["a7"] = make_knight(WHITE);
-        brd["a8"] = make_rook(WHITE);
+        const uint line[2] = { 0 , 7 };
+        const uint8_t clr[2] = { WHITE, BLACK };
+
+        for(uint i = 0 ; i < 2; ++i)
+        {
+            brd[line[i]][0] = make_rook  (clr[i]);
+            brd[line[i]][1] = make_knight(clr[i]);
+            brd[line[i]][2] = make_bishop(clr[i]);
+            brd[line[i]][3] = make_queen (clr[i]);
+            brd[line[i]][4] = make_king  (clr[i]);
+            brd[line[i]][5] = make_bishop(clr[i]);
+            brd[line[i]][6] = make_knight(clr[i]);
+            brd[line[i]][7] = make_rook  (clr[i]);
+        }
         
 
         return brd;
