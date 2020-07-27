@@ -99,6 +99,16 @@ namespace light_chess
             brd[6][i] = make_pawn(BLACK);
         }
 
+        brd["a1"] = make_rook(WHITE);
+        brd["a2"] = make_knight(WHITE);
+        brd["a3"] = make_bishop(WHITE);
+        brd["a4"] = make_queen(WHITE);
+        brd["a5"] = make_king(WHITE);
+        brd["a6"] = make_bishop(WHITE);
+        brd["a7"] = make_knight(WHITE);
+        brd["a8"] = make_rook(WHITE);
+        
+
         return brd;
     }
 
