@@ -41,18 +41,58 @@ namespace light_chess
     }
 
 
-    
+
 }
 
 namespace lc = light_chess;
 
 int main(void)
 {
-    lc::board brd{};
+    lc::board brd = lc::init_board();
     //lc::piece pwn = lc::make_pawn(BLACK);
     //brd.at("a1");
-    std::cout << int(brd["a1"]) << '\n';
+    std::cout << int(brd["b1"]) << '\n';
     
-    print(brd);
+
+    
+    std::string in;
+    do
+    {
+        print(brd);
+        std::cout << "> ";
+        std::getline (std::cin, in);
+
+        
+        
+        //std::cout << "Invalid move ex: \"a1 a2\"\n";
+        lc::position from;
+        lc::position to;
+
+        from[0] = in[0];
+        from[1] = in[1];
+
+        to[0] = in[3];
+        to[1] = in[4];
+        brd.move(from,to);
+        
+
+        //std::cout << "\"" << in << "\"\n";
+    } 
+    while(in != "exit");
+    
+
+    /* for(auto& l : asd)
+    {
+        for(auto& v : l)
+        {
+            v = lc::make_rook(WHITE);
+            asd[3][1] = 1;
+            std::cout << int(v) << " ";
+        }
+        std::cout << "\n";
+    } */
+
+
+
     return 0;
 }

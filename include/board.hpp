@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include <iostream>
+#include <array>
 
 #define PAWN 1
 #define KNIGHT 2
@@ -22,6 +23,12 @@ namespace light_chess
     using piece_color = int8_t;
     using position = char[2];
 
+    template<class T, uint N, uint M>
+    using mat = std::array<std::array<T,M>,N>;
+
+    //template<uint N, uint M>
+    //using sub_board = mat<piece,N,M>;
+
     constexpr piece make_pawn(const piece_color);
     constexpr piece make_knight(const piece_color);
     constexpr piece make_bishop(const piece_color);
@@ -31,52 +38,87 @@ namespace light_chess
 
     constexpr char representation(const piece);
 
-    //class piece
-    //{
-    //    private:
-    //        int8_t data;
-    //    public:
-    //        
-//
-    //};
-
     class board
     {
         private:
-            piece data[8][8];
+            mat<piece,8,8> data;
         public:
             board() = default;
+            constexpr board(mat<piece,8,8> t_data) : data(t_data) {};
+
+            piece at(const position pos)
+            {
+                return data[pos[0]-'a'][pos[1]-'1'];
+            }
+
+            piece at(const uint l, const uint c)
+            {
+                return data[l][c];
+            }
 
             piece& operator[](const position pos)
             {
                 return data[pos[0]-'a'][pos[1]-'1'];
             }
 
-            piece* operator[](const uint pos)
+            void set(const position pos, const piece pce)
             {
-                return data[pos];
+                (*this)[pos] = pce;
             }
 
 
-            bool move(const position from, const position to);
+            bool move(const position from, const position to)
+            {
+                piece& tmp1 = (*this)[from];
+                piece& tmp2 = (*this)[to];
+
+                if(tmp1 != 0 && tmp2 == 0)
+                {
+                    tmp2 = tmp1;
+                    tmp1 = 0;
+                    return true;
+                }
+                else
+                    return false;
+
+                
+            }
 
             std::vector<position> moves(const position pos);
 
     };
 
 
-    
+    constexpr board init_board()
+    {
+        mat<piece,8,8> brd{};
+        
+        for(uint i = 0 ; i < 8 ; ++i)
+        {
+            brd[1][i] = make_pawn(WHITE);
+            brd[6][i] = make_pawn(BLACK);
+        }
+
+        return brd;
+    }
+
+
     void print(board b)
     {
         //std::cout << "+-+-+-+-+-+-+-+-+\n";
         for(uint i = 0 ; i < 8 ; ++i)
         {
-            std::cout << "+-+-+-+-+-+-+-+-+\n";
+            std::cout << "   +---+---+---+---+---+---+---+---+\n";
+            printf(" %c ", 97 + i);
             for(uint j = 0 ; j < 8 ; ++j)
-                printf("|%d", int(b[i][j]));
+            {
+                const piece tmp = b.at(i,j);
+                printf((tmp < 0) ? "|%d " : "| %d " , int(tmp));
+            }
             std::cout << "|\n";
         }
-        std::cout << "+-+-+-+-+-+-+-+-+\n";
+        std::cout << "   +---+---+---+---+---+---+---+---+\n     1   2   3   4   5   6   7   8\n";
+
     }
 }
 
