@@ -59,7 +59,7 @@ namespace light_chess
 
             piece& operator[](const position pos)
             {
-                return data[pos[0]-'a'][pos[1]-'1'];
+                return data[pos[1]-'1'][pos[0]-'a'];
             }
 
             void set(const position pos, const piece pce)
@@ -70,14 +70,22 @@ namespace light_chess
 
             bool move(const position from, const position to)
             {
-                piece tmp1 = (*this)[from];
+                piece piece_to_move = (*this)[from];
                 piece tmp2 = (*this)[to];
 
-                if(tmp1 != 0 && tmp2 == 0)
+                if(piece_to_move != 0)
                 {
-                    switch(tmp1)
+                    switch(piece_to_move)
                     {
                         case PAWN:
+                            if(piece_to_move < 0) // If is black (blue)
+                            {
+
+                            }
+                            else // else if is white (red)
+                            {
+
+                            }
                             break;
                         case KNIGHT:
                             break;
@@ -90,7 +98,7 @@ namespace light_chess
                         case KING:
                             break;
                     }
-                    (*this)[to] = tmp1;
+                    (*this)[to] = piece_to_move;
                     (*this)[from] = 0;
                     return true;
                 }
