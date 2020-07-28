@@ -49,7 +49,7 @@ namespace light_chess
 
             piece at(const position pos)
             {
-                return data[pos[0]-'a'][pos[1]-'1'];
+                return data[7-(pos[1]-'1')][pos[0]-'a'];
             }
 
             piece at(const uint l, const uint c)
@@ -59,7 +59,7 @@ namespace light_chess
 
             piece& operator[](const position pos)
             {
-                return data[pos[1]-'1'][pos[0]-'a'];
+                return data[7-(pos[1]-'1')][pos[0]-'a'];
             }
 
             void set(const position pos, const piece pce)
@@ -80,11 +80,11 @@ namespace light_chess
                         case PAWN:
                             if(piece_to_move < 0) // If is black (blue)
                             {
-
+                                
                             }
                             else // else if is white (red)
                             {
-
+                                
                             }
                             break;
                         case KNIGHT:
@@ -148,7 +148,7 @@ namespace light_chess
         for(uint i = 0 ; i < 8 ; ++i)
         {
             std::cout << "   +---+---+---+---+---+---+---+---+\n";
-            printf(" %c ", 97 + i);
+            printf(" %d ", 8 - i);
             for(uint j = 0 ; j < 8 ; ++j)
             {
                 const piece tmp = b.at(i,j);
@@ -157,7 +157,7 @@ namespace light_chess
             std::cout << "|\n";
             
         }
-        std::cout << "   +---+---+---+---+---+---+---+---+\n     1   2   3   4   5   6   7   8\n";
+        std::cout << "   +---+---+---+---+---+---+---+---+\n     a   b   c   d   e   f   g   h\n";
 
     }
 }
