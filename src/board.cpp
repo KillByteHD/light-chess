@@ -51,7 +51,7 @@ int main(void)
     lc::board brd = lc::init_board();
     //lc::piece pwn = lc::make_pawn(BLACK);
     //brd.at("a1");
-    std::cout << int(brd["b1"]) << '\n';
+    //std::cout << int(brd["b1"]) << '\n';
     
 
     
@@ -73,7 +73,7 @@ int main(void)
 
         to[0] = in[3];
         to[1] = in[4];
-        brd.move(from,to);
+        std::cout << ((brd.move(from,to)) ? "moved\n" : "didn't move\n");
         
 
         //std::cout << "\"" << in << "\"\n";

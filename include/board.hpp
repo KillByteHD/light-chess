@@ -6,6 +6,7 @@
 #include <iostream>
 #include <array>
 
+#define NONE 0
 #define PAWN 1
 #define KNIGHT 2
 #define BISHOP 3
@@ -36,7 +37,7 @@ namespace light_chess
     constexpr piece make_queen(const piece_color);
     constexpr piece make_king(const piece_color);
 
-    constexpr char representation(const piece);
+    //constexpr char representation(const piece);
 
     class board
     {
@@ -69,19 +70,32 @@ namespace light_chess
 
             bool move(const position from, const position to)
             {
-                piece& tmp1 = (*this)[from];
-                piece& tmp2 = (*this)[to];
+                piece tmp1 = (*this)[from];
+                piece tmp2 = (*this)[to];
 
                 if(tmp1 != 0 && tmp2 == 0)
                 {
-                    tmp2 = tmp1;
-                    tmp1 = 0;
+                    switch(tmp1)
+                    {
+                        case PAWN:
+                            break;
+                        case KNIGHT:
+                            break;
+                        case BISHOP:
+                            break;
+                        case ROOK:
+                            break;
+                        case QUEEN:
+                            break;
+                        case KING:
+                            break;
+                    }
+                    (*this)[to] = tmp1;
+                    (*this)[from] = 0;
                     return true;
                 }
-                else
-                    return false;
-
                 
+                return false; 
             }
 
             std::vector<position> moves(const position pos);
@@ -121,6 +135,7 @@ namespace light_chess
 
     void print(board b)
     {
+        static const char repr[7] = { ' ', 'p', 'k', 'b', 'R', 'Q', 'K' };
         //std::cout << "+-+-+-+-+-+-+-+-+\n";
         for(uint i = 0 ; i < 8 ; ++i)
         {
@@ -129,9 +144,10 @@ namespace light_chess
             for(uint j = 0 ; j < 8 ; ++j)
             {
                 const piece tmp = b.at(i,j);
-                printf((tmp < 0) ? "|%d " : "| %d " , int(tmp));
+                printf((tmp < 0) ? "| \e[34m%c\e[0m " : "| \e[31m%c\e[0m " , repr[std::abs(tmp)]); //"\e[31m \e[0m"
             }
             std::cout << "|\n";
+            
         }
         std::cout << "   +---+---+---+---+---+---+---+---+\n     1   2   3   4   5   6   7   8\n";
 
