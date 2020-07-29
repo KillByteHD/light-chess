@@ -81,58 +81,59 @@ namespace light_chess
                 piece piece_to_move = (*this)[from];
                 //piece tmp2 = (*this)[to];
 
-                if(piece_to_move != 0)
+                if(piece_to_move != NONE)
                 {
                     switch(std::abs(piece_to_move))
                     {
+                        const auto diffs = diff(from,to);
                         case PAWN: //TODO: 'Promotion' and 'En passant'
                         {
                             std::cout << "Matched PAWN\n";
-                            const auto diffs = diff(from,to);
+                            
                             const int8_t diff1 = diffs[0];
                             const int8_t orientation = (diffs[1] < 0) ? -1 : 1;
                             const int8_t diff2 = orientation*diffs[1];
 
-                            if(diff1 == 0)
+                            if(diff1 == NONE)
                             {
                                 if(diff2 == 1)
                                 {
-                                    if((*this)[to] == 0)
+                                    if((*this)[to] == NONE)
                                         goto MOVE;
-                                    std::cout << "(0,1)\n";
                                 }
                                 else if(diff2 == 2 && from[1] == '2')
                                 {
-                                    const position ante_pos = {to[0]+orientation,to[1]};
+                                    const position ante_pos  = {to[0]+orientation,to[1]};
                                     if((*this)[ante_pos] == 0 && (*this)[to] == 0)
                                         goto MOVE;
-                                    std::cout << "(0,2)\n";
                                 }
                             }
                             else if((diff1 == 1 || diff1 == -1) && diff2 == 1)
                             {
                                 if(ARE_OPOSITE_COLOR(piece_to_move,(*this)[to]))
                                     goto MOVE;
-                                std::cout << "(-1,1) or (1,1)\n";
+                                
                             }
 
                             goto INVALID_MOVE;
-                            
-
-                            //if(piece_to_move < 0) // If is black (blue)
-                            //{
-                            //    
-                            //}
-                            //else // else if is white (red)
-                            //{
-                            //    
-                            //}
-
-                            break;
+                            //break;
                         }
                         case KNIGHT:
+                        {
                             std::cout << "Matched KNIGHT\n";
-                            break;
+                            const int8_t diff1 = std::abs(diffs[0]);
+                            const int8_t diff2 = std::abs(diffs[1]);
+                            if((diff1 == 2 && diff2 == 1) || (diff1 == 1 && diff2 == 2))
+                            {
+                                const piece piece_in_destiny = (*this)[to];
+                                if(piece_in_destiny == NONE || ARE_OPOSITE_COLOR(piece_to_move, piece_in_destiny))
+                                    goto MOVE;
+                            }
+
+                            goto INVALID_MOVE;
+                        }
+                            
+                            
                         case BISHOP:
                             std::cout << "Matched BISHOP\n";
                             break;
