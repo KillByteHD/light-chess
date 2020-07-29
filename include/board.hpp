@@ -83,9 +83,9 @@ namespace light_chess
 
                 if(piece_to_move != NONE)
                 {
+                    const auto diffs = diff(from,to);
                     switch(std::abs(piece_to_move))
                     {
-                        const auto diffs = diff(from,to);
                         case PAWN: //TODO: 'Promotion' and 'En passant'
                         {
                             std::cout << "Matched PAWN\n";
