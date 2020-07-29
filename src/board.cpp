@@ -49,12 +49,18 @@ namespace lc = light_chess;
 int main(void)
 {
     lc::board brd = lc::init_board();
-    //lc::piece pwn = lc::make_pawn(BLACK);
-    //brd.at("a1");
-    //std::cout << int(brd["b1"]) << '\n';
     
 
+    lc::position from = { 'a', '7' };
+    lc::position to = { 'a', '5' };
     
+
+
+
+
+    //const auto asd = lc::diff(from,to);
+    //std::cout << int(asd[0]) << " , " << int(asd[1]) << "\n";
+
     std::string in;
     do
     {
@@ -80,18 +86,6 @@ int main(void)
     } 
     while(in != "exit");
     
-
-    /* for(auto& l : asd)
-    {
-        for(auto& v : l)
-        {
-            v = lc::make_rook(WHITE);
-            asd[3][1] = 1;
-            std::cout << int(v) << " ";
-        }
-        std::cout << "\n";
-    } */
-
 
 
     return 0;

@@ -17,6 +17,8 @@
 #define WHITE 0
 #define BLACK 1
 
+#define ARE_OPOSITE_COLOR(p1,p2) (p1 < 0 && p2 > 0) || (p1 > 0 && p2 < 0)
+
 namespace light_chess
 {
 
@@ -29,6 +31,12 @@ namespace light_chess
 
     //template<uint N, uint M>
     //using sub_board = mat<piece,N,M>;
+
+
+    std::array<int8_t,2> diff(const position p1, const position p2)
+    {
+        return std::array<int8_t,2>{ (p1[0]-'a') - (p2[0]-'a') , (p1[1]-'1') - (p2[1]-'1') };
+    }
 
     constexpr piece make_pawn(const piece_color);
     constexpr piece make_knight(const piece_color);
@@ -71,38 +79,83 @@ namespace light_chess
             bool move(const position from, const position to)
             {
                 piece piece_to_move = (*this)[from];
-                piece tmp2 = (*this)[to];
+                //piece tmp2 = (*this)[to];
 
                 if(piece_to_move != 0)
                 {
-                    switch(piece_to_move)
+                    switch(std::abs(piece_to_move))
                     {
-                        case PAWN:
-                            if(piece_to_move < 0) // If is black (blue)
+                        case PAWN: //TODO: 'Promotion' and 'En passant'
+                        {
+                            std::cout << "Matched PAWN\n";
+                            const auto diffs = diff(from,to);
+                            const int8_t diff1 = diffs[0];
+                            const int8_t orientation = (diffs[1] < 0) ? -1 : 1;
+                            const int8_t diff2 = orientation*diffs[1];
+
+                            if(diff1 == 0)
                             {
-                                
+                                if(diff2 == 1)
+                                {
+                                    if((*this)[to] == 0)
+                                        goto MOVE;
+                                    std::cout << "(0,1)\n";
+                                }
+                                else if(diff2 == 2 && from[1] == '2')
+                                {
+                                    const position ante_pos = {to[0]+orientation,to[1]};
+                                    if((*this)[ante_pos] == 0 && (*this)[to] == 0)
+                                        goto MOVE;
+                                    std::cout << "(0,2)\n";
+                                }
                             }
-                            else // else if is white (red)
+                            else if((diff1 == 1 || diff1 == -1) && diff2 == 1)
                             {
-                                
+                                if(ARE_OPOSITE_COLOR(piece_to_move,(*this)[to]))
+                                    goto MOVE;
+                                std::cout << "(-1,1) or (1,1)\n";
                             }
+
+                            goto INVALID_MOVE;
+                            
+
+                            //if(piece_to_move < 0) // If is black (blue)
+                            //{
+                            //    
+                            //}
+                            //else // else if is white (red)
+                            //{
+                            //    
+                            //}
+
                             break;
+                        }
                         case KNIGHT:
+                            std::cout << "Matched KNIGHT\n";
                             break;
                         case BISHOP:
+                            std::cout << "Matched BISHOP\n";
                             break;
                         case ROOK:
+                            std::cout << "Matched ROOK\n";
                             break;
                         case QUEEN:
+                            std::cout << "Matched QUEEN\n";
                             break;
                         case KING:
+                            std::cout << "Matched KING\n";
                             break;
+
+
                     }
+
+                    MOVE:
                     (*this)[to] = piece_to_move;
                     (*this)[from] = 0;
                     return true;
                 }
                 
+                INVALID_MOVE:
                 return false; 
             }
 
@@ -113,16 +166,19 @@ namespace light_chess
 
     constexpr board init_board()
     {
+        /* {
+            { -1 },
+        } */
         mat<piece,8,8> brd{};
         
         for(uint i = 0 ; i < 8 ; ++i)
         {
-            brd[1][i] = make_pawn(WHITE);
-            brd[6][i] = make_pawn(BLACK);
+            brd[1][i] = make_pawn(BLACK);
+            brd[6][i] = make_pawn(WHITE);
         }
 
         const uint line[2] = { 0 , 7 };
-        const uint8_t clr[2] = { WHITE, BLACK };
+        const uint8_t clr[2] = { BLACK, WHITE };
 
         for(uint i = 0 ; i < 2; ++i)
         {
