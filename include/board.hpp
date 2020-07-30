@@ -154,7 +154,6 @@ namespace light_chess
                                 const piece piece_in_destiny = (*this)[to];
                                 if(piece_in_destiny == NONE || ARE_OPOSITE_COLOR(piece_to_move, piece_in_destiny))
                                     goto MOVE;
-                                
                             }
 
                             goto INVALID_MOVE;
@@ -192,7 +191,6 @@ namespace light_chess
                                 const piece piece_in_destiny = (*this)[to];
                                 if(piece_in_destiny == NONE || ARE_OPOSITE_COLOR(piece_to_move, piece_in_destiny))
                                     goto MOVE;
-
                             }
 
                             goto INVALID_MOVE;
@@ -201,6 +199,52 @@ namespace light_chess
                         case QUEEN:
                         {
                             std::cout << "Matched QUEEN\n";
+                            const int8_t diff1 = diffs[0];
+                            const int8_t positive_diff1 = std::abs(diff1);
+                            const int8_t diff2 = diffs[1];
+                            const int8_t positive_diff2 = std::abs(diff2);
+                            if(diff1 == 0 && diff2 != 0)
+                            {
+                                const int8_t orientation_horizontal = (diff2 < 0) ? -1 : 1;
+
+                                for(uint i = 1 ; i < positive_diff2 ; ++i)
+                                {
+                                    const position ante_pos  = {from[0],from[1]-orientation_horizontal*i};
+                                    if((*this)[ante_pos] != 0)
+                                        goto INVALID_MOVE;
+                                }
+                                const piece piece_in_destiny = (*this)[to];
+                                if(piece_in_destiny == NONE || ARE_OPOSITE_COLOR(piece_to_move, piece_in_destiny))
+                                    goto MOVE;
+                            }
+                            else if(diff1 != 0 && diff2 == 0)
+                            {
+                                const int8_t orientation_vertical = (diff1 < 0) ? -1 : 1;
+                                for(uint i = 1 ; i < positive_diff1 ; ++i)
+                                {
+                                    const position ante_pos  = {from[0]-orientation_vertical*i,from[1]};
+                                    if((*this)[ante_pos] != 0)
+                                        goto INVALID_MOVE;
+                                }
+                                const piece piece_in_destiny = (*this)[to];
+                                if(piece_in_destiny == NONE || ARE_OPOSITE_COLOR(piece_to_move, piece_in_destiny))
+                                    goto MOVE;
+                            }
+                            else if(positive_diff1 == positive_diff2)
+                            {
+                                const int8_t orientation_horizontal = (diff1 < 0) ? -1 : 1;
+                                const int8_t orientation_vertical = (diff2 < 0) ? -1 : 1;
+                                for(uint i = 1 ; i < positive_diff1 ; ++i)
+                                {
+                                    const position ante_pos  = {from[0]-orientation_horizontal*i,from[1]-orientation_vertical*i};
+                                    if((*this)[ante_pos] != 0)
+                                        goto INVALID_MOVE;
+                                }
+                                const piece piece_in_destiny = (*this)[to];
+                                if(piece_in_destiny == NONE || ARE_OPOSITE_COLOR(piece_to_move, piece_in_destiny))
+                                    goto MOVE;
+                            }
+
                             goto INVALID_MOVE;
                         }
                         case KING:
