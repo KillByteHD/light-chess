@@ -1,5 +1,5 @@
-#ifndef PIECE_HPP
-#define PIECE_HPP
+#ifndef CHESS_HPP
+#define CHESS_HPP
 
 #include <cstdint>
 #include <vector>
@@ -132,8 +132,6 @@ namespace light_chess
 
                             goto INVALID_MOVE;
                         }
-                            
-                            
                         case BISHOP:
                         {
                             std::cout << "Matched BISHOP\n";
@@ -195,7 +193,6 @@ namespace light_chess
 
                             goto INVALID_MOVE;
                         }
-                            
                         case QUEEN:
                         {
                             std::cout << "Matched QUEEN\n";
@@ -247,9 +244,20 @@ namespace light_chess
 
                             goto INVALID_MOVE;
                         }
-                        case KING:
+                        case KING: // TODO: 'Castling'
                         {
                             std::cout << "Matched KING\n";
+                            const int8_t diff1 = diffs[0];
+                            const int8_t positive_diff1 = std::abs(diff1);
+                            const int8_t diff2 = diffs[1];
+                            const int8_t positive_diff2 = std::abs(diff2);
+                            if((positive_diff1 == 1 && (positive_diff2 == 1 || positive_diff2 == 0)) 
+                                || (positive_diff1 == 0 && positive_diff2 == 1))
+                            {
+                                const piece piece_in_destiny = (*this)[to];
+                                if(piece_in_destiny == NONE || ARE_OPOSITE_COLOR(piece_to_move, piece_in_destiny))
+                                    goto MOVE;
+                            }
                             goto INVALID_MOVE;
                         }
                     }
@@ -271,19 +279,29 @@ namespace light_chess
 
     constexpr board init_board()
     {
-        /* 
-        {
-            { -4 , -2 , -3 , -5 , -6 , -3 , -2 , -4 },
-            { -1 , -1 , -1 , -1 , -1 , -1 , -1 , -1 },
-            { -0 , -0 , -0 , -0 , -0 , -0 , -0 , -0 },
-            { -0 , -0 , -0 , -0 , -0 , -0 , -0 , -0 },
-            { -0 , -0 , -0 , -0 , -0 , -0 , -0 , -0 },
-            { -0 , -0 , -0 , -0 , -0 , -0 , -0 , -0 },
-            {  1 ,  1 ,  1 ,  1 ,  1 ,  1 ,  1 ,  1 },
-            {  4 ,  2 ,  3 ,  5 ,  6 ,  3 ,  2 ,  4 },
-        }
-        */
-        mat<piece,8,8> brd{};
+        unsigned long asd1[8] = { 0xfcfefdfbfafdfefc , 
+                                  0xffffffffffffffff , 
+                                  0x0000000000000000 , 
+                                  0x0000000000000000 , 
+                                  0x0000000000000000 , 
+                                  0x0000000000000000 , 
+                                  0x0101010101010101 , 
+                                  0x0402030605030204 };
+
+        board* brd = (board*) &(*asd1);
+        /* mat<piece,8,8> brd {
+            std::array<piece,8>{ -4 , -2 , -3 , -5 , -6 , -3 , -2 , -4 },
+            std::array<piece,8>{ -1 , -1 , -1 , -1 , -1 , -1 , -1 , -1 },
+            std::array<piece,8>{ -0 , -0 , -0 , -0 , -0 , -0 , -0 , -0 },
+            std::array<piece,8>{ -0 , -0 , -0 , -0 , -0 , -0 , -0 , -0 },
+            std::array<piece,8>{ -0 , -0 , -0 , -0 , -0 , -0 , -0 , -0 },
+            std::array<piece,8>{ -0 , -0 , -0 , -0 , -0 , -0 , -0 , -0 },
+            std::array<piece,8>{  1 ,  1 ,  1 ,  1 ,  1 ,  1 ,  1 ,  1 },
+            std::array<piece,8>{  4 ,  2 ,  3 ,  5 ,  6 ,  3 ,  2 ,  4 },
+        }; */
+        
+        return *brd;
+        /* mat<piece,8,8> brd{};
         
         for(uint i = 0 ; i < 8 ; ++i)
         {
@@ -304,10 +322,7 @@ namespace light_chess
             brd[line[i]][5] = make_bishop(clr[i]);
             brd[line[i]][6] = make_knight(clr[i]);
             brd[line[i]][7] = make_rook  (clr[i]);
-        }
-        
-
-        return brd;
+        } */
     }
 
 
@@ -333,4 +348,4 @@ namespace light_chess
 }
 
 
-#endif // PIECE_HPP
+#endif // CHESS_HPP

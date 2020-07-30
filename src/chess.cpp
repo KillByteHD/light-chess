@@ -1,4 +1,4 @@
-#include "board.hpp"
+#include "chess.hpp"
 
 #include <iostream>
 #include <cstdlib>
@@ -50,7 +50,16 @@ int main(void)
 {
     lc::board brd = lc::init_board();
     
-
+    /* unsigned long asd1[8] = { 0xfcfefdfbfafdfefc , 
+                              0xffffffffffffffff , 
+                              0x0000000000000000 , 
+                              0x0000000000000000 , 
+                              0x0000000000000000 , 
+                              0x0000000000000000 , 
+                              0x0101010101010101 , 
+                              0x0402030605030204 };
+                     
+    lc::board* brd = (lc::board*) &(*asd1); */
     //const auto asd = lc::diff(from,to);
     //std::cout << int(asd[0]) << " , " << int(asd[1]) << "\n";
 
