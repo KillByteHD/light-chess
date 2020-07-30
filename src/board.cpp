@@ -51,13 +51,6 @@ int main(void)
     lc::board brd = lc::init_board();
     
 
-    lc::position from = { 'a', '7' };
-    lc::position to = { 'a', '5' };
-    
-
-
-
-
     //const auto asd = lc::diff(from,to);
     //std::cout << int(asd[0]) << " , " << int(asd[1]) << "\n";
 
