@@ -274,6 +274,9 @@ namespace light_chess
 
             //std::vector<position> moves(const position pos);
 
+            bool is_check();
+            
+            bool is_checkmate();
     };
 
 
