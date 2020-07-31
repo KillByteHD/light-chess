@@ -38,12 +38,13 @@ namespace light_chess
         return std::array<int8_t,2>{ (p1[0]-'a') - (p2[0]-'a') , (p1[1]-'1') - (p2[1]-'1') };
     }
 
-    constexpr piece make_pawn(const piece_color);
-    constexpr piece make_knight(const piece_color);
-    constexpr piece make_bishop(const piece_color);
-    constexpr piece make_rook(const piece_color);
-    constexpr piece make_queen(const piece_color);
-    constexpr piece make_king(const piece_color);
+    static constexpr piece __make_piece(const piece pce, const piece_color clr) { return (clr) ? -pce : pce; }
+    constexpr piece make_pawn(const piece_color clr)   { return __make_piece(PAWN,clr); };
+    constexpr piece make_knight(const piece_color clr) { return __make_piece(KNIGHT,clr); };
+    constexpr piece make_bishop(const piece_color clr) { return __make_piece(BISHOP,clr); };
+    constexpr piece make_rook(const piece_color clr)   { return __make_piece(ROOK,clr); };
+    constexpr piece make_queen(const piece_color clr)  { return __make_piece(QUEEN,clr); };
+    constexpr piece make_king(const piece_color clr)   { return __make_piece(KING,clr); };
 
     //constexpr char representation(const piece);
 
@@ -52,7 +53,20 @@ namespace light_chess
         private:
             mat<piece,8,8> data;
         public:
-            board() = default;
+            board()
+            {
+                const unsigned long default_board[8] = { 0xfcfefdfbfafdfefc ,
+                                                         0xffffffffffffffff ,
+                                                         0x0000000000000000 ,
+                                                         0x0000000000000000 ,
+                                                         0x0000000000000000 ,
+                                                         0x0000000000000000 ,
+                                                         0x0101010101010101 ,
+                                                         0x0402030605030204 };
+                mat<piece,8,8>* brd = (mat<piece,8,8>*) &(*default_board);
+                this->data = *brd;
+            }
+
             constexpr board(mat<piece,8,8> t_data) : data(t_data) {};
 
             piece at(const position pos)
@@ -275,59 +289,26 @@ namespace light_chess
             //std::vector<position> moves(const position pos);
 
             bool is_check();
-            
+
             bool is_checkmate();
     };
 
 
-    constexpr board init_board()
+
+    class chess_game
     {
-        unsigned long asd1[8] = { 0xfcfefdfbfafdfefc , 
-                                  0xffffffffffffffff , 
-                                  0x0000000000000000 , 
-                                  0x0000000000000000 , 
-                                  0x0000000000000000 , 
-                                  0x0000000000000000 , 
-                                  0x0101010101010101 , 
-                                  0x0402030605030204 };
+        private:
+            enum class state : uint8_t { ENDED = 0, WHITE_TURN, BLACK_TURN };
+            
+            state current_state;
+            board brd;
 
-        board* brd = (board*) &(*asd1);
-        /* mat<piece,8,8> brd {
-            std::array<piece,8>{ -4 , -2 , -3 , -5 , -6 , -3 , -2 , -4 },
-            std::array<piece,8>{ -1 , -1 , -1 , -1 , -1 , -1 , -1 , -1 },
-            std::array<piece,8>{ -0 , -0 , -0 , -0 , -0 , -0 , -0 , -0 },
-            std::array<piece,8>{ -0 , -0 , -0 , -0 , -0 , -0 , -0 , -0 },
-            std::array<piece,8>{ -0 , -0 , -0 , -0 , -0 , -0 , -0 , -0 },
-            std::array<piece,8>{ -0 , -0 , -0 , -0 , -0 , -0 , -0 , -0 },
-            std::array<piece,8>{  1 ,  1 ,  1 ,  1 ,  1 ,  1 ,  1 ,  1 },
-            std::array<piece,8>{  4 ,  2 ,  3 ,  5 ,  6 ,  3 ,  2 ,  4 },
-        }; */
-        
-        return *brd;
-        /* mat<piece,8,8> brd{};
-        
-        for(uint i = 0 ; i < 8 ; ++i)
-        {
-            brd[1][i] = make_pawn(BLACK);
-            brd[6][i] = make_pawn(WHITE);
-        }
+        public:
+            chess_game(const board& t_brd) : current_state(state::WHITE_TURN), brd(t_brd) {}
 
-        const uint line[2] = { 0 , 7 };
-        const uint8_t clr[2] = { BLACK, WHITE };
+    };
 
-        for(uint i = 0 ; i < 2; ++i)
-        {
-            brd[line[i]][0] = make_rook  (clr[i]);
-            brd[line[i]][1] = make_knight(clr[i]);
-            brd[line[i]][2] = make_bishop(clr[i]);
-            brd[line[i]][3] = make_queen (clr[i]);
-            brd[line[i]][4] = make_king  (clr[i]);
-            brd[line[i]][5] = make_bishop(clr[i]);
-            brd[line[i]][6] = make_knight(clr[i]);
-            brd[line[i]][7] = make_rook  (clr[i]);
-        } */
-    }
-
+    ///////////////////////////////////// INTERFACE /////////////////////////////////////
 
     void print(board b)
     {
