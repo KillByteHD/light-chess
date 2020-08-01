@@ -9,8 +9,6 @@ int main(void)
 {
     lc::board brd;
 
-
-    
     std::string in;
     do
     {
@@ -36,6 +34,15 @@ int main(void)
     } 
     while(in != "exit");
     
+
+    
+    // piece  black white old_black
+    // PAWN   0x09  0x01  0xff
+    // KNIGHT 0x0a  0x02  0xfe
+    // BISHOP 0x0b  0x03  0xfd
+    // ROOK   0x0c  0x04  0xfc
+    // QUEEN  0x0d  0x05  0xfb
+    // KING   0x0e  0x06  0xfa
 
 
     return 0;

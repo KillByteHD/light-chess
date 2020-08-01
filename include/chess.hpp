@@ -14,17 +14,28 @@
 #define QUEEN 5
 #define KING 6
 
-#define WHITE 0
-#define BLACK 1
+#define WHITE 0b0000
+#define BLACK 0b1000
 
-#define ARE_OPOSITE_COLOR(p1,p2) (p1 < 0 && p2 > 0) || (p1 > 0 && p2 < 0)
+#define COLOR_MASK 0b1000
+#define VALUE_MASK 0b0111
+
+#define ARE_OPOSITE_COLOR(p1,p2) (p1 & COLOR_MASK) != (p2 & COLOR_MASK)
+
+//#define DEFAULT_MOVE {"a1","a1"}
+
+#define NUMBERS_REPRESENTATION
 
 namespace light_chess
 {
 
     using piece = int8_t;
+    //enum class piece : int8_t 
+    //{ NONE=0, PAWN=1, KNIGHT=2, BISHOP=3, ROOK=4, QUEEN=5, KING=6 };
+
     using piece_color = int8_t;
     using position = char[2];
+    using move_t = position[2];
 
     template<class T, uint N, uint M>
     using mat = std::array<std::array<T,M>,N>;
@@ -38,36 +49,41 @@ namespace light_chess
         return std::array<int8_t,2>{ (p1[0]-'a') - (p2[0]-'a') , (p1[1]-'1') - (p2[1]-'1') };
     }
 
-    static constexpr piece __make_piece(const piece pce, const piece_color clr) { return (clr) ? -pce : pce; }
-    constexpr piece make_pawn(const piece_color clr)   { return __make_piece(PAWN,clr); };
+    static constexpr piece __make_piece(const piece pce, const piece_color clr) { return clr | pce; }
+    constexpr piece make_pawn(const piece_color clr)   { return __make_piece(PAWN  ,clr); };
     constexpr piece make_knight(const piece_color clr) { return __make_piece(KNIGHT,clr); };
     constexpr piece make_bishop(const piece_color clr) { return __make_piece(BISHOP,clr); };
-    constexpr piece make_rook(const piece_color clr)   { return __make_piece(ROOK,clr); };
-    constexpr piece make_queen(const piece_color clr)  { return __make_piece(QUEEN,clr); };
-    constexpr piece make_king(const piece_color clr)   { return __make_piece(KING,clr); };
+    constexpr piece make_rook(const piece_color clr)   { return __make_piece(ROOK  ,clr); };
+    constexpr piece make_queen(const piece_color clr)  { return __make_piece(QUEEN ,clr); };
+    constexpr piece make_king(const piece_color clr)   { return __make_piece(KING  ,clr); };
 
-    //constexpr char representation(const piece);
+    constexpr bool is_black(const piece pce) { return (pce & COLOR_MASK) == WHITE; }
+    constexpr bool is_white(const piece pce) { return (pce & COLOR_MASK) == BLACK; }
+
+
 
     class board
     {
         private:
             mat<piece,8,8> data;
+            uint8_t info_bitmask;
+            move_t last_move;
         public:
             board()
             {
-                const unsigned long default_board[8] = { 0xfcfefdfbfafdfefc ,
-                                                         0xffffffffffffffff ,
+                const unsigned long default_board[8] = { 0x0c0a0b0d0e0b0a0c ,
+                                                         0x0909090909090909 ,
                                                          0x0000000000000000 ,
                                                          0x0000000000000000 ,
                                                          0x0000000000000000 ,
                                                          0x0000000000000000 ,
                                                          0x0101010101010101 ,
-                                                         0x0402030605030204 };
+                                                         0x0402030506030204 };
                 mat<piece,8,8>* brd = (mat<piece,8,8>*) &(*default_board);
                 this->data = *brd;
             }
 
-            constexpr board(mat<piece,8,8> t_data) : data(t_data) {};
+            constexpr board(mat<piece,8,8> t_data) : data(t_data), info_bitmask(0), last_move{0} {};
 
             piece at(const position pos)
             {
@@ -92,17 +108,16 @@ namespace light_chess
 
             bool move(const position from, const position to)
             {
+                // TODO: position validation
                 piece piece_to_move = (*this)[from];
-                //piece tmp2 = (*this)[to];
 
                 if(piece_to_move != NONE)
                 {
                     const auto diffs = diff(from,to);
-                    switch(std::abs(piece_to_move))
+                    switch(piece_to_move & VALUE_MASK)
                     {
                         case PAWN: //TODO: 'Promotion' and 'En passant'
                         {
-                            std::cout << "Matched PAWN\n";
                             
                             const int8_t diff1 = diffs[0];
                             const int8_t orientation = (diffs[1] < 0) ? -1 : 1;
@@ -134,9 +149,8 @@ namespace light_chess
                         }
                         case KNIGHT:
                         {
-                            std::cout << "Matched KNIGHT\n";
-                            const int8_t diff1 = std::abs(diffs[0]);
-                            const int8_t diff2 = std::abs(diffs[1]);
+                            const int8_t diff1 = diffs[0] & VALUE_MASK;
+                            const int8_t diff2 = diffs[1] & VALUE_MASK;
                             if((diff1 == 2 && diff2 == 1) || (diff1 == 1 && diff2 == 2))
                             {
                                 const piece piece_in_destiny = (*this)[to];
@@ -148,11 +162,10 @@ namespace light_chess
                         }
                         case BISHOP:
                         {
-                            std::cout << "Matched BISHOP\n";
                             const int8_t diff1 = diffs[0];
-                            const int8_t positive_diff1 = std::abs(diff1);
+                            const int8_t positive_diff1 = diff1 & VALUE_MASK;
                             const int8_t diff2 = diffs[1];
-                            const int8_t positive_diff2 = std::abs(diff2);
+                            const int8_t positive_diff2 = diff2 & VALUE_MASK;
                             if(positive_diff1 == positive_diff2)
                             {
                                 const int8_t orientation_horizontal = (diff1 < 0) ? -1 : 1;
@@ -172,11 +185,10 @@ namespace light_chess
                         }
                         case ROOK:
                         {
-                            std::cout << "Matched ROOK\n";
                             const int8_t diff1 = diffs[0];
-                            const int8_t positive_diff1 = std::abs(diff1);
+                            const int8_t positive_diff1 = diff1 & VALUE_MASK;
                             const int8_t diff2 = diffs[1];
-                            const int8_t positive_diff2 = std::abs(diff2);
+                            const int8_t positive_diff2 = diff2 & VALUE_MASK;
                             if(diff1 == 0 && diff2 != 0)
                             {
                                 const int8_t orientation_horizontal = (diff2 < 0) ? -1 : 1;
@@ -209,11 +221,10 @@ namespace light_chess
                         }
                         case QUEEN:
                         {
-                            std::cout << "Matched QUEEN\n";
                             const int8_t diff1 = diffs[0];
-                            const int8_t positive_diff1 = std::abs(diff1);
+                            const int8_t positive_diff1 = diff1 & VALUE_MASK;
                             const int8_t diff2 = diffs[1];
-                            const int8_t positive_diff2 = std::abs(diff2);
+                            const int8_t positive_diff2 = diff2 & VALUE_MASK;
                             if(diff1 == 0 && diff2 != 0)
                             {
                                 const int8_t orientation_horizontal = (diff2 < 0) ? -1 : 1;
@@ -260,11 +271,10 @@ namespace light_chess
                         }
                         case KING: // TODO: 'Castling'
                         {
-                            std::cout << "Matched KING\n";
                             const int8_t diff1 = diffs[0];
-                            const int8_t positive_diff1 = std::abs(diff1);
+                            const int8_t positive_diff1 = diff1 & VALUE_MASK;
                             const int8_t diff2 = diffs[1];
-                            const int8_t positive_diff2 = std::abs(diff2);
+                            const int8_t positive_diff2 = diff2 & VALUE_MASK;
                             if((positive_diff1 == 1 && (positive_diff2 == 1 || positive_diff2 == 0)) 
                                 || (positive_diff1 == 0 && positive_diff2 == 1))
                             {
@@ -288,9 +298,22 @@ namespace light_chess
 
             //std::vector<position> moves(const position pos);
 
-            bool is_check();
+            constexpr bool is_check(const piece_color clr)
+            {
+                for(uint i = 0 ; i < 8 ; ++i)
+                {
+                    for(uint j = 0 ; j < 8 ; ++j)
+                    {
+                        if(data[i][j])
+                        {
 
-            bool is_checkmate();
+                        }
+                    }
+                }
+                return false;
+            }
+
+            constexpr bool is_checkmate();
     };
 
 
@@ -321,7 +344,17 @@ namespace light_chess
             for(uint j = 0 ; j < 8 ; ++j)
             {
                 const piece tmp = b.at(i,j);
-                printf((tmp < 0) ? "| \e[34m%c\e[0m " : "| \e[31m%c\e[0m " , repr[std::abs(tmp)]); //"\e[31m \e[0m"
+                #ifdef NUMBERS_REPRESENTATION
+                    if(!tmp)
+                        printf("| %d " , int(tmp));
+                    else if(tmp != 9)
+                        printf((tmp & COLOR_MASK) ? "|\e[34m%d\e[0m " : "| \e[31m%d\e[0m " , int(tmp));
+                    else
+                        printf("| \e[34m%d\e[0m ", int(tmp));
+                #else
+                    printf((tmp < 0) ? "| \e[34m%c\e[0m " : "| \e[31m%c\e[0m " , repr[tmp & VALUE_MASK]);
+                #endif
+                 //"\e[31m \e[0m"
             }
             std::cout << "|\n";
             
