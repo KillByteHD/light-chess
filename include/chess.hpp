@@ -300,13 +300,30 @@ namespace light_chess
 
             constexpr bool is_check(const piece_color clr)
             {
+                // Exit rule is to find in the capture path of a piece the oposite color king
                 for(uint i = 0 ; i < 8 ; ++i)
                 {
                     for(uint j = 0 ; j < 8 ; ++j)
                     {
-                        if(data[i][j] & VALUE_MASK)
+                        const piece current_piece = data[i][j];
+                        if(current_piece & COLOR_MASK != clr)
                         {
-
+                            switch(current_piece & VALUE_MASK)
+                            {
+                                case PAWN:
+                                    break;
+                                case KNIGHT:
+                                    break;
+                                case BISHOP:
+                                    break;
+                                case ROOK:
+                                    break;
+                                case QUEEN:
+                                    break;
+                                case KING:
+                                    break;
+                                // The default rule is to find NONE and do nothing.
+                            }
                         }
                     }
                 }
@@ -321,7 +338,7 @@ namespace light_chess
     class chess_game
     {
         private:
-            enum class state : uint8_t { WHITE_TURN=WHITE, BLACK_TURN=BLACK, ENDED };
+            enum state : uint8_t { WHITE_TURN=WHITE, BLACK_TURN=BLACK, ENDED };
             
             state current_state;
             board brd;
@@ -334,15 +351,26 @@ namespace light_chess
                 if(current_state != state::ENDED)
                 {
                     if((brd[from] & COLOR_MASK) == int(current_state) )
-                    brd.move(from,to);
-                    if(brd.is_check(piece_color(current_state)))
-                    {
-                        //TODO: check if is 'mate' and set the game state as ENDED
-                        return false;
+                    {    
+                        const bool moved = brd.move(from,to);
+                        if(moved)
+                        {
+                            if(false /* brd.is_check(piece_color(current_state)) */)
+                            {
+                                //TODO: check if is 'mate' and set the game state as ENDED
+                                current_state = state::ENDED;
+                            }
+                            else
+                            {
+                                int8_t a = 1;
+                                a = ~a;
+                                current_state = static_cast<state>(~current_state);
+                            }
+                        }
                     }
                 }
-                else
-                    return false;
+                
+                return false;
             }
     };
 
