@@ -67,7 +67,7 @@ namespace light_chess
         private:
             mat<piece,8,8> data;
             uint8_t info_bitmask;
-            move_t last_move;
+            std::array<int8_t,2> last_move_diff;
         public:
             board()
             {
@@ -83,7 +83,7 @@ namespace light_chess
                 this->data = *brd;
             }
 
-            constexpr board(mat<piece,8,8> t_data) : data(t_data), info_bitmask(0), last_move{0} {};
+            constexpr board(mat<piece,8,8> t_data) : data(t_data), info_bitmask(0), last_move_diff{0} {};
 
             piece at(const position pos)
             {
@@ -304,7 +304,7 @@ namespace light_chess
                 {
                     for(uint j = 0 ; j < 8 ; ++j)
                     {
-                        if(data[i][j])
+                        if(data[i][j] & VALUE_MASK)
                         {
 
                         }
@@ -321,7 +321,7 @@ namespace light_chess
     class chess_game
     {
         private:
-            enum class state : uint8_t { ENDED = 0, WHITE_TURN, BLACK_TURN };
+            enum class state : uint8_t { WHITE_TURN=WHITE, BLACK_TURN=BLACK, ENDED };
             
             state current_state;
             board brd;
@@ -329,6 +329,21 @@ namespace light_chess
         public:
             chess_game(const board& t_brd) : current_state(state::WHITE_TURN), brd(t_brd) {}
 
+            bool move(const position from, const position to)
+            {
+                if(current_state != state::ENDED)
+                {
+                    if((brd[from] & COLOR_MASK) == int(current_state) )
+                    brd.move(from,to);
+                    if(brd.is_check(piece_color(current_state)))
+                    {
+                        //TODO: check if is 'mate' and set the game state as ENDED
+                        return false;
+                    }
+                }
+                else
+                    return false;
+            }
     };
 
     ///////////////////////////////////// INTERFACE /////////////////////////////////////
