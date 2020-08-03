@@ -397,7 +397,7 @@ namespace light_chess
                     else
                         printf("| \e[34m%d\e[0m ", int(tmp));
                 #else
-                    printf((tmp & COLOR_MASK) ? "| \e[34m%c\e[0m " : "| \e[31m%c\e[0m " , repr[tmp & VALUE_MASK]);
+                    printf((tmp & COLOR_MASK) ? "| \e[34m%c\e[0m " : "|\e[107m \e[0m\e[31m%c\e[0m " , repr[tmp & VALUE_MASK]);
                 #endif
                  //"\e[31m \e[0m"
             }
