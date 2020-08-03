@@ -67,7 +67,8 @@ namespace light_chess
         private:
             mat<piece,8,8> data;
             uint8_t info_bitmask;
-            std::array<int8_t,2> last_move_diff;
+            move_t last_move;
+            piece last_move_capture;
         public:
             board()
             {
@@ -83,7 +84,7 @@ namespace light_chess
                 this->data = *brd;
             }
 
-            constexpr board(mat<piece,8,8> t_data) : data(t_data), info_bitmask(0), last_move_diff{0} {};
+            constexpr board(mat<piece,8,8> t_data) : data(t_data), info_bitmask(0), last_move{0} {};
 
             piece at(const position pos)
             {
@@ -100,7 +101,7 @@ namespace light_chess
                 return data[7-(pos[1]-'1')][pos[0]-'a'];
             }
 
-            void set(const position pos, const piece pce)
+            void set(position pos, piece pce)
             {
                 (*this)[pos] = pce;
             }
@@ -287,13 +288,23 @@ namespace light_chess
                     }
 
                     MOVE:
+                    if((*this)[to] != 0)
+                    {
+                        last_move_capture = (*this)[to];
+                    }
                     (*this)[to] = piece_to_move;
                     (*this)[from] = 0;
+                    //last_move = move_t{ from , to };
                     return true;
                 }
                 
                 INVALID_MOVE:
                 return false; 
+            }
+
+            constexpr void undo()
+            {
+
             }
 
             //std::vector<position> moves(const position pos);
@@ -358,14 +369,16 @@ namespace light_chess
                         const bool moved = brd.move(from,to);
                         if(moved)
                         {
-                            if(false /* brd.is_check(piece_color(current_state)) */)
+                            if(brd.is_check(static_cast<piece_color>(current_state)))
                             {
                                 //TODO: check if is 'mate' and set the game state as ENDED
-                                current_state = state::ENDED;
+                                if(false)
+                                {
+                                    current_state = state::ENDED;
+                                }
                             }
                             else
                             {
-                                std::cout << int(COLOR_MASK ^ current_state) << "\n";
                                 current_state = static_cast<state>(COLOR_MASK ^ current_state);
                             }
                         }
@@ -397,7 +410,7 @@ namespace light_chess
                     else
                         printf("| \e[34m%d\e[0m ", int(tmp));
                 #else
-                    printf((tmp & COLOR_MASK) ? "| \e[34m%c\e[0m " : "|\e[107m \e[0m\e[31m%c\e[0m " , repr[tmp & VALUE_MASK]);
+                    printf((tmp & COLOR_MASK) ? "| \e[34m%c\e[0m " : "| \e[31m%c\e[0m " , repr[tmp & VALUE_MASK]);
                 #endif
                  //"\e[31m \e[0m"
             }
