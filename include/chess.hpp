@@ -24,7 +24,7 @@
 
 //#define DEFAULT_MOVE {"a1","a1"}
 
-#define NUMBERS_REPRESENTATION
+//#define NUMBERS_REPRESENTATION
 
 namespace light_chess
 {
@@ -344,14 +344,17 @@ namespace light_chess
             board brd;
 
         public:
+            chess_game() = default;
             chess_game(const board& t_brd) : current_state(state::WHITE_TURN), brd(t_brd) {}
+
+            constexpr board get_board() { return brd; }
 
             bool move(const position from, const position to)
             {
                 if(current_state != state::ENDED)
                 {
                     if((brd[from] & COLOR_MASK) == int(current_state) )
-                    {    
+                    {
                         const bool moved = brd.move(from,to);
                         if(moved)
                         {
@@ -362,9 +365,8 @@ namespace light_chess
                             }
                             else
                             {
-                                int8_t a = 1;
-                                a = ~a;
-                                current_state = static_cast<state>(~current_state);
+                                std::cout << int(COLOR_MASK ^ current_state) << "\n";
+                                current_state = static_cast<state>(COLOR_MASK ^ current_state);
                             }
                         }
                     }
@@ -395,7 +397,7 @@ namespace light_chess
                     else
                         printf("| \e[34m%d\e[0m ", int(tmp));
                 #else
-                    printf((tmp < 0) ? "| \e[34m%c\e[0m " : "| \e[31m%c\e[0m " , repr[tmp & VALUE_MASK]);
+                    printf((tmp & COLOR_MASK) ? "| \e[34m%c\e[0m " : "| \e[31m%c\e[0m " , repr[tmp & VALUE_MASK]);
                 #endif
                  //"\e[31m \e[0m"
             }
