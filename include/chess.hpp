@@ -46,16 +46,16 @@ namespace light_chess
 
     std::array<int8_t,2> diff(const position p1, const position p2)
     {
-        return std::array<int8_t,2>{ (p1[0]-'a') - (p2[0]-'a') , (p1[1]-'1') - (p2[1]-'1') };
+        return std::array<int8_t,2>{ static_cast<char>((p1[0]-'a') - (p2[0]-'a')) , static_cast<char>((p1[1]-'1') - (p2[1]-'1')) };
     }
 
     static constexpr piece __make_piece(const piece pce, const piece_color clr) { return clr | pce; }
-    constexpr piece make_pawn(const piece_color clr)   { return __make_piece(PAWN  ,clr); };
-    constexpr piece make_knight(const piece_color clr) { return __make_piece(KNIGHT,clr); };
-    constexpr piece make_bishop(const piece_color clr) { return __make_piece(BISHOP,clr); };
-    constexpr piece make_rook(const piece_color clr)   { return __make_piece(ROOK  ,clr); };
-    constexpr piece make_queen(const piece_color clr)  { return __make_piece(QUEEN ,clr); };
-    constexpr piece make_king(const piece_color clr)   { return __make_piece(KING  ,clr); };
+    constexpr piece make_pawn(const piece_color clr)   { return __make_piece(PAWN  ,clr); }
+    constexpr piece make_knight(const piece_color clr) { return __make_piece(KNIGHT,clr); }
+    constexpr piece make_bishop(const piece_color clr) { return __make_piece(BISHOP,clr); }
+    constexpr piece make_rook(const piece_color clr)   { return __make_piece(ROOK  ,clr); }
+    constexpr piece make_queen(const piece_color clr)  { return __make_piece(QUEEN ,clr); }
+    constexpr piece make_king(const piece_color clr)   { return __make_piece(KING  ,clr); }
 
     constexpr bool is_black(const piece pce) { return (pce & COLOR_MASK) == WHITE; }
     constexpr bool is_white(const piece pce) { return (pce & COLOR_MASK) == BLACK; }
@@ -72,19 +72,19 @@ namespace light_chess
         public:
             board()
             {
-                const unsigned long default_board[8] = { 0x0c0a0b0d0e0b0a0c ,
+                const unsigned long default_board[8] = { 0x0c0a0b0e0d0b0a0c ,
                                                          0x0909090909090909 ,
                                                          0x0000000000000000 ,
                                                          0x0000000000000000 ,
                                                          0x0000000000000000 ,
                                                          0x0000000000000000 ,
                                                          0x0101010101010101 ,
-                                                         0x0402030506030204 };
+                                                         0x0402030605030204 };
                 mat<piece,8,8>* brd = (mat<piece,8,8>*) &(*default_board);
                 this->data = *brd;
             }
 
-            constexpr board(mat<piece,8,8> t_data) : data(t_data), info_bitmask(0), last_move{0} {};
+            constexpr board(mat<piece,8,8> t_data) : data(t_data), info_bitmask(0), last_move{0}, last_move_capture(NONE) {};
 
             piece at(const position pos)
             {
@@ -124,16 +124,16 @@ namespace light_chess
                             const int8_t orientation = (diffs[1] < 0) ? -1 : 1;
                             const int8_t diff2 = orientation*diffs[1];
 
-                            if(diff1 == NONE)
+                            if(diff1 == 0)
                             {
                                 if(diff2 == 1)
                                 {
                                     if((*this)[to] == NONE)
                                         goto MOVE;
                                 }
-                                else if(diff2 == 2 && from[1] == '2')
+                                else if(diff2 == 2 && (from[1] == '2' || from[1] == '7')) /* ((from[1] == '2' && ((*this)[to] & COLOR_MASK) == WHITE) || (from[1] == '7' && ((*this)[to] & COLOR_MASK) == BLACK)) */
                                 {
-                                    const position ante_pos  = {to[0]+orientation,to[1]};
+                                    const position ante_pos  = {static_cast<char>(to[0]+orientation),to[1]};
                                     if((*this)[ante_pos] == 0 && (*this)[to] == 0)
                                         goto MOVE;
                                 }
@@ -171,9 +171,9 @@ namespace light_chess
                             {
                                 const int8_t orientation_horizontal = (diff1 < 0) ? -1 : 1;
                                 const int8_t orientation_vertical = (diff2 < 0) ? -1 : 1;
-                                for(uint i = 1 ; i < positive_diff1 ; ++i)
+                                for(int i = 1 ; i < positive_diff1 ; ++i)
                                 {
-                                    const position ante_pos  = {from[0]-orientation_horizontal*i,from[1]-orientation_vertical*i};
+                                    const position ante_pos  = {static_cast<char>(from[0]-orientation_horizontal*i), static_cast<char>(from[1]-orientation_vertical*i)};
                                     if((*this)[ante_pos] != 0)
                                         goto INVALID_MOVE;
                                 }
@@ -194,9 +194,9 @@ namespace light_chess
                             {
                                 const int8_t orientation_horizontal = (diff2 < 0) ? -1 : 1;
 
-                                for(uint i = 1 ; i < positive_diff2 ; ++i)
+                                for(int i = 1 ; i < positive_diff2 ; ++i)
                                 {
-                                    const position ante_pos  = {from[0],from[1]-orientation_horizontal*i};
+                                    const position ante_pos  = {from[0],static_cast<char>(from[1]-orientation_horizontal*i)};
                                     if((*this)[ante_pos] != 0)
                                         goto INVALID_MOVE;
                                 }
@@ -207,9 +207,9 @@ namespace light_chess
                             else if(diff1 != 0 && diff2 == 0)
                             {
                                 const int8_t orientation_vertical = (diff1 < 0) ? -1 : 1;
-                                for(uint i = 1 ; i < positive_diff1 ; ++i)
+                                for(int i = 1 ; i < positive_diff1 ; ++i)
                                 {
-                                    const position ante_pos  = {from[0]-orientation_vertical*i,from[1]};
+                                    const position ante_pos  = {static_cast<char>(from[0]-orientation_vertical*i),from[1]};
                                     if((*this)[ante_pos] != 0)
                                         goto INVALID_MOVE;
                                 }
@@ -230,9 +230,9 @@ namespace light_chess
                             {
                                 const int8_t orientation_horizontal = (diff2 < 0) ? -1 : 1;
 
-                                for(uint i = 1 ; i < positive_diff2 ; ++i)
+                                for(int i = 1 ; i < positive_diff2 ; ++i)
                                 {
-                                    const position ante_pos  = {from[0],from[1]-orientation_horizontal*i};
+                                    const position ante_pos  = {from[0],static_cast<char>(from[1]-orientation_horizontal*i)};
                                     if((*this)[ante_pos] != 0)
                                         goto INVALID_MOVE;
                                 }
@@ -243,9 +243,9 @@ namespace light_chess
                             else if(diff1 != 0 && diff2 == 0)
                             {
                                 const int8_t orientation_vertical = (diff1 < 0) ? -1 : 1;
-                                for(uint i = 1 ; i < positive_diff1 ; ++i)
+                                for(int i = 1 ; i < positive_diff1 ; ++i)
                                 {
-                                    const position ante_pos  = {from[0]-orientation_vertical*i,from[1]};
+                                    const position ante_pos  = {static_cast<char>(from[0]-orientation_vertical*i),from[1]};
                                     if((*this)[ante_pos] != 0)
                                         goto INVALID_MOVE;
                                 }
@@ -257,9 +257,9 @@ namespace light_chess
                             {
                                 const int8_t orientation_horizontal = (diff1 < 0) ? -1 : 1;
                                 const int8_t orientation_vertical = (diff2 < 0) ? -1 : 1;
-                                for(uint i = 1 ; i < positive_diff1 ; ++i)
+                                for(int i = 1 ; i < positive_diff1 ; ++i)
                                 {
-                                    const position ante_pos  = {from[0]-orientation_horizontal*i,from[1]-orientation_vertical*i};
+                                    const position ante_pos  = {static_cast<char>(from[0]-orientation_horizontal*i),static_cast<char>(from[1]-orientation_vertical*i)};
                                     if((*this)[ante_pos] != 0)
                                         goto INVALID_MOVE;
                                 }
@@ -317,11 +317,15 @@ namespace light_chess
                     for(uint j = 0 ; j < 8 ; ++j)
                     {
                         const piece current_piece = data[i][j];
-                        if(current_piece & COLOR_MASK != clr)
+                        if((current_piece & COLOR_MASK) != clr)
                         {
                             switch(current_piece & VALUE_MASK)
                             {
                                 case PAWN:
+                                if(clr == BLACK)
+                                {
+
+                                }
                                     break;
                                 case KNIGHT:
                                     break;
@@ -371,6 +375,7 @@ namespace light_chess
                         {
                             if(brd.is_check(static_cast<piece_color>(current_state)))
                             {
+                                std::cout << "IS CHECK\n";
                                 //TODO: check if is 'mate' and set the game state as ENDED
                                 if(false)
                                 {
@@ -380,6 +385,7 @@ namespace light_chess
                             else
                             {
                                 current_state = static_cast<state>(COLOR_MASK ^ current_state);
+                                std::cout << "TURN OF: " <<  int(current_state) << "\n";
                             }
                         }
                     }
