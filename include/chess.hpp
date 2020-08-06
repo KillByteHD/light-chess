@@ -20,6 +20,7 @@
 #define COLOR_MASK 0b1000
 #define VALUE_MASK 0b0111
 
+#define IN_BOUNDS(x) (0 <= x) && (x < 8)
 #define ARE_OPOSITE_COLOR(p1,p2) (p1 & COLOR_MASK) != (p2 & COLOR_MASK)
 
 //#define DEFAULT_MOVE {"a1","a1"}
@@ -72,14 +73,32 @@ namespace light_chess
         public:
             board()
             {
-                const unsigned long default_board[8] = { 0x0c0a0b0e0d0b0a0c ,
-                                                         0x0909090909090909 ,
+                const unsigned long default_board[8] = { 0x0c0a0b0d0e0b0a0c ,
+                                                         0x0009090909090909 ,
                                                          0x0000000000000000 ,
-                                                         0x0000000000000000 ,
+                                                         0x0900000200000000 ,
                                                          0x0000000000000000 ,
                                                          0x0000000000000000 ,
                                                          0x0101010101010101 ,
-                                                         0x0402030605030204 };
+                                                         0x0400030506030204 };
+
+                                                        //0x0c0a0b0e0d0b0a0c
+                                                        //0x0909090909090909
+                                                        //0x0000000000000000
+                                                        //0x0000000000000000
+                                                        //0x0000000000000000
+                                                        //0x0000000000000000
+                                                        //0x0101010101010101
+                                                        //0x0402030605030204                                                         
+
+                                                        //0x0c0a0b0d0e0b0a0c
+                                                        //0x0009090909090909
+                                                        //0x0000000000000000
+                                                        //0x0900000200000000
+                                                        //0x0000000000000000
+                                                        //0x0000000000000000
+                                                        //0x0101010101010101
+                                                        //0x0400030506030204
                 mat<piece,8,8>* brd = (mat<piece,8,8>*) &(*default_board);
                 this->data = *brd;
             }
@@ -150,8 +169,8 @@ namespace light_chess
                         }
                         case KNIGHT:
                         {
-                            const int8_t diff1 = diffs[0] & VALUE_MASK;
-                            const int8_t diff2 = diffs[1] & VALUE_MASK;
+                            const int8_t diff1 = std::abs(diffs[0]) ;//& VALUE_MASK;
+                            const int8_t diff2 = std::abs(diffs[1]) ;//& VALUE_MASK;
                             if((diff1 == 2 && diff2 == 1) || (diff1 == 1 && diff2 == 2))
                             {
                                 const piece piece_in_destiny = (*this)[to];
@@ -312,13 +331,14 @@ namespace light_chess
             constexpr bool is_check(const piece_color clr)
             {
                 // Exit rule is to find in the capture path of a piece the oposite color king
-                for(uint i = 0 ; i < 8 ; ++i)
+                for(int i = 0 ; i < 8 ; ++i)
                 {
-                    for(uint j = 0 ; j < 8 ; ++j)
+                    for(int j = 0 ; j < 8 ; ++j)
                     {
                         const piece current_piece = data[i][j];
                         if((current_piece & COLOR_MASK) != clr)
                         {
+                            const piece target_king = KING | clr;
                             switch(current_piece & VALUE_MASK)
                             {
                                 case PAWN:
@@ -328,7 +348,18 @@ namespace light_chess
                                 }
                                     break;
                                 case KNIGHT:
+                                {
+                                    const int capture_diffs[16] = {-2,-1,-2,1,2,-1,2,1,-1,-2,1,-2,-1,2,1,2};
+                                    for(uint k = 0 ; k < 16 ; k+=2)
+                                    {
+                                        if(IN_BOUNDS(i+capture_diffs[k]) && IN_BOUNDS(j+capture_diffs[k+1]) 
+                                            && data[i+capture_diffs[k]][j+capture_diffs[k+1]] == target_king)
+                                            return true;
+                                    }
+                                        
                                     break;
+                                }
+                                    
                                 case BISHOP:
                                     break;
                                 case ROOK:
@@ -336,6 +367,8 @@ namespace light_chess
                                 case QUEEN:
                                     break;
                                 case KING:
+                                    break;
+                                default:
                                     break;
                                 // The default rule is to find NONE and do nothing.
                             }
@@ -357,8 +390,8 @@ namespace light_chess
             
             state current_state;
             board brd;
-
         public:
+
             chess_game() = default;
             chess_game(const board& t_brd) : current_state(state::WHITE_TURN), brd(t_brd) {}
 
@@ -376,6 +409,7 @@ namespace light_chess
                             if(brd.is_check(static_cast<piece_color>(current_state)))
                             {
                                 std::cout << "IS CHECK\n";
+                                //TODO: Restore last move
                                 //TODO: check if is 'mate' and set the game state as ENDED
                                 if(false)
                                 {

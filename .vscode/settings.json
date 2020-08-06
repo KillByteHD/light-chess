@@ -94,6 +94,7 @@
         "bit": "cpp",
         "complex": "cpp",
         "csignal": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "filesystem": "cpp"
     }
 }
