@@ -105,12 +105,12 @@ namespace light_chess
 
             constexpr board(mat<piece,8,8> t_data) : data(t_data), info_bitmask(0), last_move{0}, last_move_capture(NONE) {};
 
-            piece at(const position pos)
+            piece at(const position pos) const
             {
                 return data[7-(pos[1]-'1')][pos[0]-'a'];
             }
 
-            piece at(const uint l, const uint c)
+            piece at(const uint l, const uint c) const
             {
                 return data[l][c];
             }
@@ -349,11 +349,12 @@ namespace light_chess
                                     break;
                                 case KNIGHT:
                                 {
-                                    const int capture_diffs[16] = {-2,-1,-2,1,2,-1,2,1,-1,-2,1,-2,-1,2,1,2};
+                                    const int capture_diffs[][2] = {{-2,-1},{-2,1},{2,-1},{2,1},{-1,-2},{1,-2},{-1,2},{1,2}};
                                     for(uint k = 0 ; k < 16 ; k+=2)
+                                    for(const auto& v : capture_diffs)
                                     {
-                                        if(IN_BOUNDS(i+capture_diffs[k]) && IN_BOUNDS(j+capture_diffs[k+1]) 
-                                            && data[i+capture_diffs[k]][j+capture_diffs[k+1]] == target_king)
+                                        if(IN_BOUNDS(i+v[0]) && IN_BOUNDS(j+v[1]) 
+                                            && data[i+v[0]][j+v[1]] == target_king)
                                             return true;
                                     }
                                         
@@ -367,7 +368,17 @@ namespace light_chess
                                 case QUEEN:
                                     break;
                                 case KING:
+                                {
+                                    const int capture_diffs[][2] = { {1,1},{1,0},{0,1},{0,-1},{-1,0},{-1,1},{1,-1},{-1,-1} };
+                                    for(const auto& v : capture_diffs)
+                                    {
+                                        if(IN_BOUNDS(i+v[0]) && IN_BOUNDS(j+v[1]) 
+                                            && data[i+v[0]][j+v[1]] == target_king)
+                                            return true;
+                                    }
+
                                     break;
+                                }
                                 default:
                                     break;
                                 // The default rule is to find NONE and do nothing.
@@ -431,7 +442,7 @@ namespace light_chess
 
     ///////////////////////////////////// INTERFACE /////////////////////////////////////
 
-    void print(board b)
+    void print(const board b)
     {
         static const char repr[7] = { ' ', 'p', 'k', 'b', 'R', 'Q', 'K' };
         //std::cout << "+-+-+-+-+-+-+-+-+\n";
