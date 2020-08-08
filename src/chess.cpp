@@ -7,6 +7,7 @@ namespace lc = light_chess;
 
 int main(void)
 {
+    
     lc::chess_game gaem;
 
     std::cout << "\e[31mRed\e[0m is White and \e[34mBlue\e[0m is \e[90mBlack\e[0m\n";
