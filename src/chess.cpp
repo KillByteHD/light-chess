@@ -27,7 +27,7 @@ int main(void)
                 std::cout << "0x";
                 for(uint j = 0 ; j < 8 ; ++j)
                 {
-                    std::cout << sad_pepe[gaem.get_board().at(i,j)];
+                    std::cout << sad_pepe[gaem.get_board().at(i,7-j)];
                 }
                 std::cout << "\n";
             }

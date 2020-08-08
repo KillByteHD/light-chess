@@ -75,12 +75,12 @@ namespace light_chess
             {
                 const unsigned long default_board[8] = { 0x0c0a0b0e0d0b0a0c ,
                                                          0x0009090900090900 ,
-                                                         0x0900000009000000 ,
+                                                         0x0900000409000000 ,
                                                          0x0000000002000309 ,
                                                          0x0000000100000000 ,
                                                          0x0000000000000000 ,
                                                          0x0101010001010101 ,
-                                                         0x0402000605030004 };
+                                                         0x0402000605030000 };
 
                                                         //0x0c0a0b0e0d0b0a0c
                                                         //0x0909090909090909
@@ -342,7 +342,20 @@ namespace light_chess
                             switch(current_piece & VALUE_MASK)
                             {
                                 case PAWN:
-                                break;
+                                {
+                                    int capture_diffs[2][2] = {{-1,1},{-1,-1}};
+                                    if(is_black(current_piece))
+                                        capture_diffs[0][0] = capture_diffs[1][0] = 1;
+                                    
+                                    for(const auto& v : capture_diffs)
+                                    {
+                                        if(IN_BOUNDS(i+v[0]) && IN_BOUNDS(j+v[1]) 
+                                            && data[i+v[0]][j+v[1]] == target_king)
+                                            return true;
+                                    }
+
+                                    break;
+                                }
                                 case KNIGHT:
                                 {
                                     const int capture_diffs[][2] = {{-2,-1},{-2,1},{2,-1},{2,1},{-1,-2},{1,-2},{-1,2},{1,2}};
@@ -405,7 +418,27 @@ namespace light_chess
                                 }
                                     
                                 case QUEEN:
+                                {
+                                    const int capture_diff_it[][2] = {{0,1},{0,-1},{1,0},{-1,0},{1,1},{-1,1},{1,-1},{-1,-1}};
+                                    for(const auto& v : capture_diff_it)
+                                    {
+                                        for(int k = 1 ; k <= 8 ; ++k)
+                                        {
+                                            // = data[i+v[0]*k][j+v[1]*k];
+                                            if(IN_BOUNDS(i+v[0]*k) && IN_BOUNDS(j+v[1]*k))
+                                            {
+                                                const piece tmp = data[i+v[0]*k][j+v[1]*k];
+                                                if(tmp == target_king)
+                                                    return true;
+                                                else if(tmp != NONE)
+                                                    break;
+                                            }
+                                            else
+                                                break;
+                                        }
+                                    }
                                     break;
+                                }
                                 case KING:
                                 {
                                     const int capture_diffs[][2] = { {1,1},{1,0},{0,1},{0,-1},{-1,0},{-1,1},{1,-1},{-1,-1} };
