@@ -22,6 +22,7 @@
 
 #define IN_BOUNDS(x) (0 <= x) && (x < 8)
 #define ARE_OPOSITE_COLOR(p1,p2) (p1 & COLOR_MASK) != (p2 & COLOR_MASK)
+#define COPY_MOVE(from,to) (move_t) {(position) { move[0][0] , move[0][1] } , (position) { move[1][0] , move[1][1] }}
 
 //#define DEFAULT_MOVE {"a1","a1"}
 
@@ -35,8 +36,8 @@ namespace light_chess
     //{ NONE=0, PAWN=1, KNIGHT=2, BISHOP=3, ROOK=4, QUEEN=5, KING=6 };
 
     using piece_color = int8_t;
-    using position = char[2];
-    using move_t = position[2];
+    using position = std::array<char,2>;
+    using move_t = std::array<position,2>;
 
     template<class T, uint N, uint M>
     using mat = std::array<std::array<T,M>,N>;
@@ -68,8 +69,9 @@ namespace light_chess
         private:
             mat<piece,8,8> data;
             uint8_t info_bitmask;
-            move_t last_move;
-            piece last_move_capture;
+            std::vector<std::pair<move_t,piece>> move_history;
+            //move_t last_move;
+            //piece last_move_capture;
         public:
             board()
             {
@@ -103,7 +105,7 @@ namespace light_chess
                 this->data = *brd;
             }
 
-            constexpr board(mat<piece,8,8> t_data) : data(t_data), info_bitmask(0), last_move{0}, last_move_capture(NONE) {};
+            board(mat<piece,8,8> t_data) : data(t_data), info_bitmask(0), move_history(0) {};
 
             piece at(const position pos) const
             {
@@ -307,10 +309,12 @@ namespace light_chess
                     }
 
                     MOVE:
-                    if((*this)[to] != 0)
-                    {
-                        last_move_capture = (*this)[to];
-                    }
+                    // If doesn't captures this variable will be NONE
+                    piece capture = (*this)[to];
+                    //move_t last_move = move_t{ from , to };
+                    move_t last_move{from,to};
+
+                    move_history.emplace_back(last_move ,capture);
                     (*this)[to] = piece_to_move;
                     (*this)[from] = 0;
                     //last_move = move_t{ from , to };
@@ -321,9 +325,16 @@ namespace light_chess
                 return false; 
             }
 
-            constexpr void undo()
+            void undo()
             {
+                
+                const auto last_move_and_capture = move_history.back(); //.at(move_history.size());
+                const move_t& last_move =  std::get<0>(last_move_and_capture);
+                
+                (*this)[last_move[0]] = (*this)[last_move[1]];
+                (*this)[last_move[1]] = std::get<1>(last_move_and_capture);
 
+                move_history.pop_back();
             }
 
             //std::vector<position> moves(const position pos);
@@ -475,9 +486,9 @@ namespace light_chess
             chess_game() = default;
             chess_game(const board& t_brd) : current_state(state::WHITE_TURN), brd(t_brd) {}
 
-            constexpr board get_board() { return brd; }
+            /* constexpr */ board get_board() { return brd; }
 
-            bool move(const position from, const position to)
+            constexpr bool move(const position from, const position to)
             {
                 if(current_state != state::ENDED)
                 {
@@ -490,6 +501,7 @@ namespace light_chess
                             {
                                 std::cout << "IS CHECK\n";
                                 //TODO: Restore last move
+                                brd.undo();
                                 //TODO: check if is 'mate' and set the game state as ENDED
                                 if(false)
                                 {
@@ -501,6 +513,7 @@ namespace light_chess
                                 current_state = static_cast<state>(COLOR_MASK ^ current_state);
                                 std::cout << "TURN OF: " <<  int(current_state) << "\n";
                             }
+                            return true;
                         }
                     }
                 }
