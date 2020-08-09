@@ -74,13 +74,13 @@ namespace light_chess
             board()
             {
                 const unsigned long default_board[8] = { 0x0c0a0b0e0d0b0a0c ,
-                                                         0x0009090900090900 ,
-                                                         0x0900000409000000 ,
-                                                         0x0000000002000309 ,
-                                                         0x0000000100000000 ,
+                                                         0x0909090909090909 ,
                                                          0x0000000000000000 ,
-                                                         0x0101010001010101 ,
-                                                         0x0402000605030000 };
+                                                         0x0000000000000000 ,
+                                                         0x0000000000000000 ,
+                                                         0x0000000000000000 ,
+                                                         0x0101010101010101 ,
+                                                         0x0402030605030204 };
 
                                                         //0x0c0a0b0e0d0b0a0c
                                                         //0x0909090909090909
@@ -91,14 +91,14 @@ namespace light_chess
                                                         //0x0101010101010101
                                                         //0x0402030605030204                                                         
 
-                                                        //0x0c0a0b0d0e0b0a0c
-                                                        //0x0009090909090909
+                                                        //0x0c0a0b0e0d0b0a0c
+                                                        //0x0009090900090900
+                                                        //0x0900000409000000
+                                                        //0x0000000002000309
+                                                        //0x0000000100000000
                                                         //0x0000000000000000
-                                                        //0x0900000200000000
-                                                        //0x0000000000000000
-                                                        //0x0000000000000000
-                                                        //0x0101010101010101
-                                                        //0x0400030506030204
+                                                        //0x0101010001010101
+                                                        //0x0402000605030000
                 mat<piece,8,8>* brd = (mat<piece,8,8>*) &(*default_board);
                 this->data = *brd;
             }
@@ -140,7 +140,7 @@ namespace light_chess
                         {
                             
                             const int8_t diff1 = diffs[0];
-                            const int8_t orientation = (diffs[1] < 0) ? -1 : 1;
+                            const int8_t orientation = (is_black(piece_to_move)) ? -1 : 1;
                             const int8_t diff2 = orientation*diffs[1];
 
                             if(diff1 == 0)
@@ -183,9 +183,9 @@ namespace light_chess
                         case BISHOP:
                         {
                             const int8_t diff1 = diffs[0];
-                            const int8_t positive_diff1 = diff1 & VALUE_MASK;
+                            const int8_t positive_diff1 = std::abs(diff1);
                             const int8_t diff2 = diffs[1];
-                            const int8_t positive_diff2 = diff2 & VALUE_MASK;
+                            const int8_t positive_diff2 = std::abs(diff2);
                             if(positive_diff1 == positive_diff2)
                             {
                                 const int8_t orientation_horizontal = (diff1 < 0) ? -1 : 1;
@@ -193,7 +193,7 @@ namespace light_chess
                                 for(int i = 1 ; i < positive_diff1 ; ++i)
                                 {
                                     const position ante_pos  = {static_cast<char>(from[0]-orientation_horizontal*i), static_cast<char>(from[1]-orientation_vertical*i)};
-                                    if((*this)[ante_pos] != 0)
+                                    if((*this)[ante_pos] != NONE)
                                         goto INVALID_MOVE;
                                 }
                                 const piece piece_in_destiny = (*this)[to];
@@ -206,9 +206,9 @@ namespace light_chess
                         case ROOK:
                         {
                             const int8_t diff1 = diffs[0];
-                            const int8_t positive_diff1 = diff1 & VALUE_MASK;
+                            const int8_t positive_diff1 = std::abs(diff1);
                             const int8_t diff2 = diffs[1];
-                            const int8_t positive_diff2 = diff2 & VALUE_MASK;
+                            const int8_t positive_diff2 = std::abs(diff2);
                             if(diff1 == 0 && diff2 != 0)
                             {
                                 const int8_t orientation_horizontal = (diff2 < 0) ? -1 : 1;
@@ -242,9 +242,9 @@ namespace light_chess
                         case QUEEN:
                         {
                             const int8_t diff1 = diffs[0];
-                            const int8_t positive_diff1 = diff1 & VALUE_MASK;
+                            const int8_t positive_diff1 = std::abs(diff1);
                             const int8_t diff2 = diffs[1];
-                            const int8_t positive_diff2 = diff2 & VALUE_MASK;
+                            const int8_t positive_diff2 = std::abs(diff2);
                             if(diff1 == 0 && diff2 != 0)
                             {
                                 const int8_t orientation_horizontal = (diff2 < 0) ? -1 : 1;
@@ -292,9 +292,9 @@ namespace light_chess
                         case KING: // TODO: 'Castling'
                         {
                             const int8_t diff1 = diffs[0];
-                            const int8_t positive_diff1 = diff1 & VALUE_MASK;
+                            const int8_t positive_diff1 = std::abs(diff1);
                             const int8_t diff2 = diffs[1];
-                            const int8_t positive_diff2 = diff2 & VALUE_MASK;
+                            const int8_t positive_diff2 = std::abs(diff2);
                             if((positive_diff1 == 1 && (positive_diff2 == 1 || positive_diff2 == 0)) 
                                 || (positive_diff1 == 0 && positive_diff2 == 1))
                             {
@@ -368,8 +368,7 @@ namespace light_chess
                                     }
                                         
                                     break;
-                                }
-                                    
+                                }     
                                 case BISHOP:
                                 {
                                     const int capture_diff_it[][2] = {{1,1},{-1,1},{1,-1},{-1,-1}};
@@ -392,8 +391,7 @@ namespace light_chess
                                     }
 
                                     break;
-                                }
-                                    
+                                }  
                                 case ROOK:
                                 {
                                     const int capture_diff_it[][2] = {{0,1},{0,-1},{1,0},{-1,0}};
@@ -416,7 +414,6 @@ namespace light_chess
                                     }
                                     break;
                                 }
-                                    
                                 case QUEEN:
                                 {
                                     const int capture_diff_it[][2] = {{0,1},{0,-1},{1,0},{-1,0},{1,1},{-1,1},{1,-1},{-1,-1}};
