@@ -70,8 +70,7 @@ namespace light_chess
             mat<piece,8,8> data;
             uint8_t info_bitmask;
             std::vector<std::pair<move_t,piece>> move_history;
-            //move_t last_move;
-            //piece last_move_capture;
+
         public:
             board()
             {
@@ -152,17 +151,27 @@ namespace light_chess
                                     if((*this)[to] == NONE)
                                         goto MOVE;
                                 }
-                                else if(diff2 == 2 && (from[1] == '2' || from[1] == '7')) /* ((from[1] == '2' && ((*this)[to] & COLOR_MASK) == WHITE) || (from[1] == '7' && ((*this)[to] & COLOR_MASK) == BLACK)) */
+                                else if(diff2 == 2 && (from[1] == '2' || from[1] == '7'))
                                 {
                                     const position ante_pos  = {static_cast<char>(to[0]+orientation),to[1]};
-                                    if((*this)[ante_pos] == 0 && (*this)[to] == 0)
+                                    if((*this)[ante_pos] == NONE && (*this)[to] == NONE)
                                         goto MOVE;
                                 }
                             }
                             else if((diff1 == 1 || diff1 == -1) && diff2 == 1)
                             {
-                                if(ARE_OPOSITE_COLOR(piece_to_move,(*this)[to]))
+                                const move_t last_move = std::get<0>(move_history.back());
+                                std::array<int8_t,2> diff_pawn_n_last_piece = diff(from,last_move[1]);
+                                if(((*this)[to] != NONE && ARE_OPOSITE_COLOR(piece_to_move,(*this)[to])))
                                     goto MOVE;
+                                else if((*this)[to] == NONE && (std::abs(diff_pawn_n_last_piece[0]) == 1 && diff_pawn_n_last_piece[1] == 0) && (*this)[last_move[1]] == make_pawn((piece_to_move & COLOR_MASK) ^ COLOR_MASK))
+                                {
+                                    // 'En passant' condiitons:
+                                    // Last piece moved must be oposite color pawn
+                                    // Must be at the side of the current moving pawn
+                                    (*this)[last_move[1]] = NONE;
+                                    goto MOVE;
+                                }
                                 
                             }
 
