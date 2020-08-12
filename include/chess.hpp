@@ -65,8 +65,8 @@ namespace light_chess
     constexpr piece make_queen(const piece_color clr)  { return __make_piece(QUEEN ,clr); }
     constexpr piece make_king(const piece_color clr)   { return __make_piece(KING  ,clr); }
 
-    constexpr bool is_black(const piece pce) { return (pce & COLOR_MASK) == WHITE; }
-    constexpr bool is_white(const piece pce) { return (pce & COLOR_MASK) == BLACK; }
+    constexpr bool is_black(const piece pce) { return (pce & COLOR_MASK) == BLACK; }
+    constexpr bool is_white(const piece pce) { return (pce & COLOR_MASK) == WHITE; }
 
 
 
@@ -76,41 +76,35 @@ namespace light_chess
             mat<piece,8,8> data;
             uint8_t info_bitmask;
             std::vector<std::pair<move_t,piece>> move_history;
+            piece promotion;
 
         public:
-            board()
+            board() : info_bitmask(0), move_history(0), promotion(QUEEN)
             {
-                const unsigned long default_board[8] = { 0x0c0a0b0e0d0b0a0c ,
-                                                         0x0909090909090909 ,
+                const unsigned long default_board[8] = { 0x0c0a0b0e0d0b0000 ,
+                                                         0x0909090909000001 ,
                                                          0x0000000000000000 ,
                                                          0x0000000000000000 ,
                                                          0x0000000000000000 ,
                                                          0x0000000000000000 ,
-                                                         0x0101010101010101 ,
+                                                         0x0101010109010100 ,
                                                          0x0402030605030204 };
 
-                                                        //0x0c0a0b0e0d0b0a0c
-                                                        //0x0909090909090909
-                                                        //0x0000000000000000
-                                                        //0x0000000000000000
-                                                        //0x0000000000000000
-                                                        //0x0000000000000000
-                                                        //0x0101010101010101
-                                                        //0x0402030605030204                                                         
+                                                    //  0x0c0a0b0e0d0b0a0c
+                                                    //  0x0909090909090909
+                                                    //  0x0000000000000000
+                                                    //  0x0000000000000000
+                                                    //  0x0000000000000000
+                                                    //  0x0000000000000000
+                                                    //  0x0101010101010101
+                                                    //  0x0402030605030204
 
-                                                        //0x0c0a0b0e0d0b0a0c
-                                                        //0x0009090900090900
-                                                        //0x0900000409000000
-                                                        //0x0000000002000309
-                                                        //0x0000000100000000
-                                                        //0x0000000000000000
-                                                        //0x0101010001010101
-                                                        //0x0402000605030000
                 mat<piece,8,8>* brd = (mat<piece,8,8>*) &(*default_board);
                 this->data = *brd;
             }
 
-            board(mat<piece,8,8> t_data) : data(t_data), info_bitmask(0), move_history(0) {};
+            board(mat<piece,8,8> t_data) : data(t_data), info_bitmask(0), move_history(0), promotion(QUEEN) {};
+
 
             piece at(const position pos) const
             {
@@ -143,11 +137,11 @@ namespace light_chess
                     const auto diffs = diff(from,to);
                     switch(piece_to_move & VALUE_MASK)
                     {
-                        case PAWN: //TODO: 'Promotion' and 'En passant'
+                        case PAWN:
                         {
                             
                             const int8_t diff1 = diffs[0];
-                            const int8_t orientation = (is_black(piece_to_move)) ? -1 : 1;
+                            const int8_t orientation = (is_black(piece_to_move)) ? 1 : -1;
                             const int8_t diff2 = orientation*diffs[1];
 
                             if(diff1 == 0)
@@ -155,7 +149,20 @@ namespace light_chess
                                 if(diff2 == 1)
                                 {
                                     if((*this)[to] == NONE)
+                                    {
+                                        const bool is_white_val = is_white(piece_to_move); 
+                                        if((is_white_val && to[1] == '8') || ((!is_white_val) && to[1] == '1'))
+                                        {
+                                            std::cout << "PROMOTED\n";
+                                            move_t last_move{from,to};
+                                            move_history.emplace_back(last_move, NONE);
+                                            (*this)[to] = promotion;
+                                            (*this)[from] = 0;
+                                            return true;
+                                        }
+                                        std::cout << "NOT PROMOTED " << (is_white_val) << "\n";
                                         goto MOVE;
+                                    }
                                 }
                                 else if(diff2 == 2 && (from[1] == '2' || from[1] == '7'))
                                 {
@@ -170,7 +177,9 @@ namespace light_chess
                                 std::array<int8_t,2> diff_pawn_n_last_piece = diff(from,last_move[1]);
                                 if(((*this)[to] != NONE && ARE_OPOSITE_COLOR(piece_to_move,(*this)[to])))
                                     goto MOVE;
-                                else if((*this)[to] == NONE && (std::abs(diff_pawn_n_last_piece[0]) == 1 && diff_pawn_n_last_piece[1] == 0) && (*this)[last_move[1]] == make_pawn((piece_to_move & COLOR_MASK) ^ COLOR_MASK))
+                                else if((*this)[to] == NONE && (std::abs(diff_pawn_n_last_piece[0]) == 1 &&
+                                    diff_pawn_n_last_piece[1] == 0) && 
+                                    (*this)[last_move[1]] == make_pawn((piece_to_move & COLOR_MASK) ^ COLOR_MASK))
                                 {
                                     // 'En passant' condiitons:
                                     // Last piece moved must be oposite color pawn
@@ -332,7 +341,6 @@ namespace light_chess
                     move_history.emplace_back(last_move ,capture);
                     (*this)[to] = piece_to_move;
                     (*this)[from] = 0;
-                    //last_move = move_t{ from , to };
                     return true;
                 }
                 
@@ -485,6 +493,11 @@ namespace light_chess
             }
 
             constexpr bool is_checkmate();
+
+            void set_promotion(const piece t_promotion)
+            {
+                this->promotion = t_promotion & VALUE_MASK;
+            }
     };
 
 
