@@ -20,17 +20,17 @@
 #define COLOR_MASK 0b1000
 #define VALUE_MASK 0b0111
 
-#define IN_BOUNDS(x) (0 <= x) && (x < 8)
-#define ARE_OPOSITE_COLOR(p1,p2) (p1 & COLOR_MASK) != (p2 & COLOR_MASK)
-#define COPY_MOVE(from,to) (move_t) {(position) { move[0][0] , move[0][1] } , (position) { move[1][0] , move[1][1] }}
-
 #define WHITE_SHORT_ROOK_MOVED_MASK 0b000001
 #define WHITE_KING_MOVED_MASK       0b000010
 #define WHITE_LONG_ROOK_MOVED_MASK  0b000100
 #define BLACK_SHORT_ROOK_MOVED_MASK 0b001000
 #define BLACK_KING_MOVED_MASK       0b010000
 #define BLACK_LONG_ROOK_MOVED_MASK  0b100000
-//#define DEFAULT_MOVE {"a1","a1"}
+
+#define IN_BOUNDS(x) (0 <= x) && (x < 8)
+#define ARE_OPOSITE_COLOR(p1,p2) (p1 & COLOR_MASK) != (p2 & COLOR_MASK)
+#define COPY_MOVE(from,to) (move_t) {(position) { move[0][0] , move[0][1] } , (position) { move[1][0] , move[1][1] }}
+
 
 //#define NUMBERS_REPRESENTATION
 
