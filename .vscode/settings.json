@@ -95,6 +95,7 @@
         "complex": "cpp",
         "csignal": "cpp",
         "set": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "variant": "cpp"
     }
 }

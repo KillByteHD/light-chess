@@ -362,7 +362,7 @@ namespace light_chess
 
             //std::vector<position> moves(const position pos);
 
-            constexpr bool is_check(const piece_color clr)
+            constexpr bool is_check(const piece_color clr) const
             {
                 // Exit rule is to find in the capture path of a piece the oposite color king
                 for(int i = 0 ; i < 8 ; ++i)
@@ -492,7 +492,7 @@ namespace light_chess
                 return false;
             }
 
-            constexpr bool is_checkmate();
+            constexpr bool is_checkmate() const;
 
             void set_promotion(const piece t_promotion)
             {
@@ -514,7 +514,7 @@ namespace light_chess
             chess_game() = default;
             chess_game(const board& t_brd) : current_state(state::WHITE_TURN), brd(t_brd) {}
 
-            /* constexpr */ board get_board() { return brd; }
+            /* constexpr */ board get_board() const { return brd; }
 
             constexpr bool move(const position from, const position to)
             {

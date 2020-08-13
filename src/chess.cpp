@@ -3,11 +3,21 @@
 #include <iostream>
 #include <cstdlib>
 
+#include <variant>
+#include <type_traits>
+#include <iomanip>
+
 namespace lc = light_chess;
+
+using special_move_t = std::pair<std::array<lc::position,2>,int8_t>;
+
+using var_move_t = std::variant<lc::move_t,special_move_t>;
 
 int main(void)
 {
-    
+    //var_move_t tmp = { lc::move_t{{'a','2'},{'a','4'}} ,  };
+    std::cout << std::is_same<lc::move_t, special_move_t>::value << "\n";
+    /* 
     lc::chess_game gaem;
 
     std::cout << "\e[31mRed\e[0m is White and \e[34mBlue\e[0m is \e[90mBlack\e[0m\n";
@@ -50,7 +60,7 @@ int main(void)
 
         //std::cout << "\"" << in << "\"\n";
     } 
-    while(in != "exit");
+    while(in != "exit"); */
     
 
     
