@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include <iostream>
+#include <variant>
 #include <array>
 
 #define NONE 0
@@ -29,8 +30,18 @@
 
 #define IN_BOUNDS(x) (0 <= x) && (x < 8)
 #define ARE_OPOSITE_COLOR(p1,p2) (p1 & COLOR_MASK) != (p2 & COLOR_MASK)
-#define COPY_MOVE(from,to) (move_t) {(position) { move[0][0] , move[0][1] } , (position) { move[1][0] , move[1][1] }}
 
+
+template<class> inline constexpr bool always_false_v = false;
+
+
+
+#define CASTLE_MOVE     0b01000000 // NEEDS: left or right info
+#define EN_PASSANT_MOVE 0b10000000 // NEEDS: nothing
+#define PROMOTION_MOVE  0b11000000 // NEEDS: piece promoted to (or not)
+
+#define LEFT_CASTLE  0b00000000
+#define RIGHT_CASTLE 0b00000001
 
 //#define NUMBERS_REPRESENTATION
 
@@ -44,18 +55,21 @@ namespace light_chess
     using piece_color = int8_t;
     using position = std::array<char,2>;
     using move_t = std::array<position,2>;
+    //using special_move_t = std::pair<move_t,int8_t>;
+    //using var_move_t = std::variant<move_t,special_move_t>;
 
     template<class T, uint N, uint M>
     using mat = std::array<std::array<T,M>,N>;
 
-    //template<uint N, uint M>
-    //using sub_board = mat<piece,N,M>;
 
 
     std::array<int8_t,2> diff(const position p1, const position p2)
     {
         return std::array<int8_t,2>{ static_cast<char>((p1[0]-'a') - (p2[0]-'a')) , static_cast<char>((p1[1]-'1') - (p2[1]-'1')) };
     }
+
+    // TODO: DELETE THIS
+    constexpr move_t make_move(position from, position to) { return move_t{from,to}; }
 
     static constexpr piece __make_piece(const piece pce, const piece_color clr) { return clr | pce; }
     constexpr piece make_pawn(const piece_color clr)   { return __make_piece(PAWN  ,clr); }
@@ -75,6 +89,7 @@ namespace light_chess
         private:
             mat<piece,8,8> data;
             uint8_t info_bitmask;
+            //std::vector<std::pair<var_move_t,piece>> move_history;
             std::vector<std::pair<move_t,piece>> move_history;
             piece promotion;
 
@@ -153,14 +168,12 @@ namespace light_chess
                                         const bool is_white_val = is_white(piece_to_move); 
                                         if((is_white_val && to[1] == '8') || ((!is_white_val) && to[1] == '1'))
                                         {
-                                            std::cout << "PROMOTED\n";
                                             move_t last_move{from,to};
                                             move_history.emplace_back(last_move, NONE);
                                             (*this)[to] = promotion;
                                             (*this)[from] = 0;
                                             return true;
                                         }
-                                        std::cout << "NOT PROMOTED " << (is_white_val) << "\n";
                                         goto MOVE;
                                     }
                                 }
@@ -173,20 +186,55 @@ namespace light_chess
                             }
                             else if((diff1 == 1 || diff1 == -1) && diff2 == 1)
                             {
-                                const move_t last_move = std::get<0>(move_history.back());
-                                std::array<int8_t,2> diff_pawn_n_last_piece = diff(from,last_move[1]);
+
                                 if(((*this)[to] != NONE && ARE_OPOSITE_COLOR(piece_to_move,(*this)[to])))
                                     goto MOVE;
-                                else if((*this)[to] == NONE && (std::abs(diff_pawn_n_last_piece[0]) == 1 &&
-                                    diff_pawn_n_last_piece[1] == 0) && 
-                                    (*this)[last_move[1]] == make_pawn((piece_to_move & COLOR_MASK) ^ COLOR_MASK))
+                                else 
                                 {
-                                    // 'En passant' condiitons:
-                                    // Last piece moved must be oposite color pawn
-                                    // Must be at the side of the current moving pawn
-                                    (*this)[last_move[1]] = NONE;
-                                    goto MOVE;
+                                    const move_t last_move = std::get<0>(move_history.back());
+                                    std::array<int8_t,2> diff_pawn_n_last_piece = diff(from,last_move[1]);
+
+                                    if((*this)[to] == NONE && (std::abs(diff_pawn_n_last_piece[0]) == 1 &&
+                                        diff_pawn_n_last_piece[1] == 0) && 
+                                        (*this)[last_move[1]] == make_pawn((piece_to_move & COLOR_MASK) ^ COLOR_MASK))
+                                    {
+                                        // 'En passant' condiitons:
+                                        // Last piece moved must be oposite color pawn
+                                        // Must be at the side of the current moving pawn
+                                        (*this)[last_move[1]] = NONE;
+                                        goto MOVE;
+                                    }
+                                    
                                 }
+
+                                /* if(((*this)[to] != NONE && ARE_OPOSITE_COLOR(piece_to_move,(*this)[to])))
+                                    goto MOVE;
+                                else 
+                                {
+                                    const var_move_t last_move_var = std::get<0>(move_history.back());
+                                    const auto last_move_ptr = std::get_if<move_t>(&last_move_var);
+
+                                    if(last_move_ptr == nullptr)
+                                    {
+                                        goto INVALID_MOVE;
+                                    }
+
+                                    const move_t& last_move = *last_move_ptr;
+
+                                    std::array<int8_t,2> diff_pawn_n_last_piece = diff(from,last_move[1]);
+
+                                    if((*this)[to] == NONE && (std::abs(diff_pawn_n_last_piece[0]) == 1 &&
+                                        diff_pawn_n_last_piece[1] == 0) && 
+                                        (*this)[last_move[1]] == make_pawn((piece_to_move & COLOR_MASK) ^ COLOR_MASK))
+                                    {
+                                        // 'En passant' condiitons:
+                                        // Last piece moved must be oposite color pawn
+                                        // Must be at the side of the current moving pawn
+                                        (*this)[last_move[1]] = NONE;
+                                        goto MOVE;
+                                    }
+                                    
+                                } */
                                 
                             }
 
@@ -338,7 +386,7 @@ namespace light_chess
                     //move_t last_move = move_t{ from , to };
                     move_t last_move{from,to};
 
-                    move_history.emplace_back(last_move ,capture);
+                    move_history.emplace_back(last_move, capture);
                     (*this)[to] = piece_to_move;
                     (*this)[from] = 0;
                     return true;
@@ -351,13 +399,51 @@ namespace light_chess
             void undo()
             {
                 
-                const auto last_move_and_capture = move_history.back(); //.at(move_history.size());
+                const auto last_move_and_capture = move_history.back();
                 const move_t& last_move =  std::get<0>(last_move_and_capture);
                 
                 (*this)[last_move[0]] = (*this)[last_move[1]];
                 (*this)[last_move[1]] = std::get<1>(last_move_and_capture);
 
                 move_history.pop_back();
+
+                
+                /* static const auto lambdas = {
+                    []() {
+
+                    },
+                    []() {
+                        
+                    },
+                    []() {
+                        
+                    }
+                } */
+
+                /* const auto last_move_and_capture_var = move_history.back();
+                std::visit([&](auto&& arg) {
+                    using T = std::decay_t<decltype(arg)>;
+                    if constexpr (std::is_same_v<T, move_t>)
+                    {
+                        const move_t& last_move =  std::get<0>(last_move_and_capture_var);
+                
+                        (*this)[last_move[0]] = (*this)[last_move[1]];
+                        (*this)[last_move[1]] = std::get<1>(last_move_and_capture_var);
+
+                        move_history.pop_back();
+                    }
+                    else if constexpr (std::is_same_v<T, special_move_t>)
+                    {
+                        const special_move_t& last_move =  std::get<0>(last_move_and_capture_var);
+                
+                        (*this)[last_move[0]] = (*this)[last_move[1]];
+                        (*this)[last_move[1]] = std::get<1>(last_move_and_capture_var);
+
+                        move_history.pop_back();
+                    }
+                    else 
+                        static_assert(always_false_v<T>, "non-exhaustive visitor!");
+                }, last_move_and_capture_var); */
             }
 
             //std::vector<position> moves(const position pos);
