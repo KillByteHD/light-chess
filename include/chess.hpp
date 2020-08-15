@@ -8,6 +8,8 @@
 #include <array>
 #include <tuple>
 
+#include <functional>
+
 #define NONE 0
 #define PAWN 1
 #define KNIGHT 2
@@ -161,6 +163,8 @@ namespace light_chess
                 {
                     int8_t info_bit_state = NORMAL_MOVE;
                     const auto diffs = diff(from,to);
+                    piece capture = (*this)[to]; // This is here because of special case of capture by 'En Passant'
+
                     switch(piece_to_move & VALUE_MASK)
                     {
                         case PAWN:
@@ -182,7 +186,7 @@ namespace light_chess
                                         {
                                             // Promotion
                                             move_t last_move{from,to};
-                                            move_history.emplace_back(last_move, EN_PASSANT_MOVE, NONE);
+                                            move_history.emplace_back(last_move, NONE, EN_PASSANT_MOVE);
                                             (*this)[to] = promotion;
                                             (*this)[from] = 0;
                                             return true;
@@ -216,6 +220,7 @@ namespace light_chess
                                         // 'En passant' condiitons:
                                         // Last piece moved must be oposite color pawn
                                         // Must be at the side of the current moving pawn
+                                        capture = (*this)[last_move[1]];
                                         (*this)[last_move[1]] = NONE;
                                         info_bit_state = EN_PASSANT_MOVE;
                                         goto MOVE;
@@ -428,7 +433,7 @@ namespace light_chess
                                               && (*this)[{static_cast<char>(from[0]+3),from[1]}] == (ROOK | (piece_to_move & COLOR_MASK)))
                                 {
                                     move_t last_move{from,to};
-                                    move_history.emplace_back(last_move, CASTLING_MOVE, NONE);
+                                    move_history.emplace_back(last_move, NONE, CASTLING_MOVE);
                                     (*this)[to] = piece_to_move;
                                     (*this)[from] = 0;
                                     const position rook_position = {static_cast<char>(from[0]+3),from[1]};
@@ -449,7 +454,7 @@ namespace light_chess
                                 {
                                     
                                     move_t last_move{from,to};
-                                    move_history.emplace_back(last_move, CASTLING_MOVE, NONE);
+                                    move_history.emplace_back(last_move, NONE, CASTLING_MOVE);
                                     (*this)[to] = piece_to_move;
                                     (*this)[from] = 0;
                                     const position rook_position = {static_cast<char>(from[0]-4),from[1]};
@@ -469,10 +474,10 @@ namespace light_chess
 
                     MOVE:
                     // If doesn't captures this variable will be NONE
-                    piece capture = (*this)[to];
+                    
                     move_t last_move{from,to};
 
-                    move_history.emplace_back(last_move, info_bit_state, capture);
+                    move_history.emplace_back(last_move, capture, info_bit_state);
                     (*this)[to] = piece_to_move;
                     (*this)[from] = 0;
                     return true;
@@ -494,22 +499,53 @@ namespace light_chess
                 move_history.pop_back();
                 */
 
-                
+                std::cout << "HEHE\n";
                 const auto last_move_and_capture = move_history.back();
-                static const auto undo_cases = {
-                    []() {
-                        
+                const move_t& last_move = std::get<0>(last_move_and_capture);
+                static const std::function<void(void)> undo_cases[4] = {
+                    [&] {
+                        std::cout << "NORMAL UNDO\n";
+                        (*this)[last_move[0]] = (*this)[last_move[1]];
+                        (*this)[last_move[1]] = std::get<1>(last_move_and_capture);
                     },
-                    []() {
-                        
+                    [&] {
+                        std::cout << "CASTLING UNDO\n";
+                        if(diff(last_move[0],last_move[1])[0] == 2)
+                        {
+                            // LONG CASTLING
+                            std::cout << "LONG UNDO\n";
+                            (*this)[last_move[0]] = (*this)[last_move[1]];
+                            (*this)[last_move[1]] = NONE;
+                            const int8_t tmp = last_move[0][1];
+                            (*this)[{tmp,'a'}] = (*this)[{tmp,'d'}];
+                            (*this)[{tmp,'d'}] = NONE;
+                        }
+                        else
+                        {
+                            std::cout << "SHORT UNDO\n";
+                            // SHORT CASTLING
+                            (*this)[last_move[0]] = (*this)[last_move[1]];
+                            (*this)[last_move[1]] = NONE;
+                            const int8_t tmp = last_move[0][1];
+                            (*this)[{tmp,'h'}] = (*this)[{tmp,'f'}];
+                            (*this)[{tmp,'f'}] = NONE;
+                        }
                     },
-                    []() {
-                        
+                    [&] {
+                        std::cout << "EN PASSANT UNDO\n";
+                        (*this)[last_move[0]] = (*this)[last_move[1]];
+                        (*this)[last_move[1]] = NONE;
+                        (*this)[{last_move[1][0],static_cast<char>(last_move[1][1]+(last_move[1][1]-last_move[0][1]))}] = std::get<1>(last_move_and_capture);
+
                     },
-                    []() {
-                        
+                    [&] {
+                        std::cout << "PROMOTION UNDO\n";
+                        (*this)[last_move[0]] = make_pawn((*this)[last_move[1]] & COLOR_MASK);
+                        (*this)[last_move[1]] = NONE;
                     }
-                }
+                };
+
+                undo_cases[std::get<2>(last_move_and_capture)]();
             }
 
             //std::vector<position> moves(const position pos);

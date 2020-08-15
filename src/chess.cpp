@@ -44,6 +44,10 @@ int main(void)
                 std::cout << "\n";
             }
         }
+        else if(in == "undo")
+        {
+            gaem.get_board().undo();
+        }
         else
         {
             //std::cout << "Invalid move ex: \"a1 a2\"\n";
