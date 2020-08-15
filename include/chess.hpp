@@ -6,6 +6,7 @@
 #include <iostream>
 #include <variant>
 #include <array>
+#include <tuple>
 
 #define NONE 0
 #define PAWN 1
@@ -36,10 +37,10 @@ template<class> inline constexpr bool always_false_v = false;
 
 
 
-#define NORMAL_MOVE     0b00000000 // NEEDS: nothing
-#define CASTLE_MOVE     0b01000000 // NEEDS: left or right info
-#define EN_PASSANT_MOVE 0b10000000 // NEEDS: nothing
-#define PROMOTION_MOVE  0b11000000 // NEEDS: piece promoted to (or not)
+#define NORMAL_MOVE     0 // NEEDS: nothing
+#define CASTLING_MOVE   1 // NEEDS: left or right info
+#define EN_PASSANT_MOVE 2 // NEEDS: nothing
+#define PROMOTION_MOVE  3 // NEEDS: piece promoted to (or not)
 
 #define LEFT_CASTLE  0b00000000
 #define RIGHT_CASTLE 0b00000001
@@ -91,7 +92,7 @@ namespace light_chess
             mat<piece,8,8> data;
             uint8_t info_bitmask;
             //std::vector<std::pair<var_move_t,piece>> move_history;
-            std::vector<std::pair<move_t,piece>> move_history;
+            std::vector<std::tuple<move_t,piece,int8_t>> move_history;
             piece promotion;
 
         public:
@@ -158,6 +159,7 @@ namespace light_chess
 
                 if(piece_to_move != NONE)
                 {
+                    int8_t info_bit_state = NORMAL_MOVE;
                     const auto diffs = diff(from,to);
                     switch(piece_to_move & VALUE_MASK)
                     {
@@ -174,11 +176,13 @@ namespace light_chess
                                 {
                                     if((*this)[to] == NONE)
                                     {
+                                        // Normal unitary move
                                         const bool is_white_val = is_white(piece_to_move); 
                                         if((is_white_val && to[1] == '8') || ((!is_white_val) && to[1] == '1'))
                                         {
+                                            // Promotion
                                             move_t last_move{from,to};
-                                            move_history.emplace_back(last_move, NONE);
+                                            move_history.emplace_back(last_move, EN_PASSANT_MOVE, NONE);
                                             (*this)[to] = promotion;
                                             (*this)[from] = 0;
                                             return true;
@@ -188,6 +192,7 @@ namespace light_chess
                                 }
                                 else if(diff2 == 2 && (from[1] == '2' || from[1] == '7'))
                                 {
+                                    // First double move
                                     const position ante_pos  = {static_cast<char>(to[0]+orientation),to[1]};
                                     if((*this)[ante_pos] == NONE && (*this)[to] == NONE)
                                         goto MOVE;
@@ -195,11 +200,12 @@ namespace light_chess
                             }
                             else if((diff1 == 1 || diff1 == -1) && diff2 == 1)
                             {
-
+                                // Diagonal move
                                 if(((*this)[to] != NONE && ARE_OPOSITE_COLOR(piece_to_move,(*this)[to])))
-                                    goto MOVE;
+                                    goto MOVE; // Capture move
                                 else 
                                 {
+                                    // En Passant
                                     const move_t last_move = std::get<0>(move_history.back());
                                     std::array<int8_t,2> diff_pawn_n_last_piece = diff(from,last_move[1]);
 
@@ -211,6 +217,7 @@ namespace light_chess
                                         // Last piece moved must be oposite color pawn
                                         // Must be at the side of the current moving pawn
                                         (*this)[last_move[1]] = NONE;
+                                        info_bit_state = EN_PASSANT_MOVE;
                                         goto MOVE;
                                     }
                                     
@@ -421,7 +428,7 @@ namespace light_chess
                                               && (*this)[{static_cast<char>(from[0]+3),from[1]}] == (ROOK | (piece_to_move & COLOR_MASK)))
                                 {
                                     move_t last_move{from,to};
-                                    move_history.emplace_back(last_move, NONE);
+                                    move_history.emplace_back(last_move, CASTLING_MOVE, NONE);
                                     (*this)[to] = piece_to_move;
                                     (*this)[from] = 0;
                                     const position rook_position = {static_cast<char>(from[0]+3),from[1]};
@@ -442,7 +449,7 @@ namespace light_chess
                                 {
                                     
                                     move_t last_move{from,to};
-                                    move_history.emplace_back(last_move, NONE);
+                                    move_history.emplace_back(last_move, CASTLING_MOVE, NONE);
                                     (*this)[to] = piece_to_move;
                                     (*this)[from] = 0;
                                     const position rook_position = {static_cast<char>(from[0]-4),from[1]};
@@ -465,7 +472,7 @@ namespace light_chess
                     piece capture = (*this)[to];
                     move_t last_move{from,to};
 
-                    move_history.emplace_back(last_move, capture);
+                    move_history.emplace_back(last_move, info_bit_state, capture);
                     (*this)[to] = piece_to_move;
                     (*this)[from] = 0;
                     return true;
@@ -477,7 +484,7 @@ namespace light_chess
 
             void undo()
             {
-                
+                /* 
                 const auto last_move_and_capture = move_history.back();
                 const move_t& last_move =  std::get<0>(last_move_and_capture);
                 
@@ -485,44 +492,24 @@ namespace light_chess
                 (*this)[last_move[1]] = std::get<1>(last_move_and_capture);
 
                 move_history.pop_back();
+                */
 
                 
-                /* static const auto lambdas = {
+                const auto last_move_and_capture = move_history.back();
+                static const auto undo_cases = {
                     []() {
-
+                        
                     },
                     []() {
                         
                     },
                     []() {
                         
+                    },
+                    []() {
+                        
                     }
-                } */
-
-                /* const auto last_move_and_capture_var = move_history.back();
-                std::visit([&](auto&& arg) {
-                    using T = std::decay_t<decltype(arg)>;
-                    if constexpr (std::is_same_v<T, move_t>)
-                    {
-                        const move_t& last_move =  std::get<0>(last_move_and_capture_var);
-                
-                        (*this)[last_move[0]] = (*this)[last_move[1]];
-                        (*this)[last_move[1]] = std::get<1>(last_move_and_capture_var);
-
-                        move_history.pop_back();
-                    }
-                    else if constexpr (std::is_same_v<T, special_move_t>)
-                    {
-                        const special_move_t& last_move =  std::get<0>(last_move_and_capture_var);
-                
-                        (*this)[last_move[0]] = (*this)[last_move[1]];
-                        (*this)[last_move[1]] = std::get<1>(last_move_and_capture_var);
-
-                        move_history.pop_back();
-                    }
-                    else 
-                        static_assert(always_false_v<T>, "non-exhaustive visitor!");
-                }, last_move_and_capture_var); */
+                }
             }
 
             //std::vector<position> moves(const position pos);
