@@ -104,9 +104,9 @@ namespace light_chess
                                                          0x0909090909000001 ,
                                                          0x0000000000000000 ,
                                                          0x0000000000000000 ,
+                                                         0x0000000000010000 ,
                                                          0x0000000000000000 ,
-                                                         0x0000000000000000 ,
-                                                         0x0101010101010100 ,
+                                                         0x0101010101000100 ,
                                                          0x0400000600000004 };
 
                                                     //  0x0c0a0b0e0d0b0a0c
@@ -186,7 +186,7 @@ namespace light_chess
                                         {
                                             // Promotion
                                             move_t last_move{from,to};
-                                            move_history.emplace_back(last_move, NONE, EN_PASSANT_MOVE);
+                                            move_history.emplace_back(last_move, NONE, PROMOTION_MOVE);
                                             (*this)[to] = promotion;
                                             (*this)[from] = 0;
                                             return true;
@@ -487,19 +487,10 @@ namespace light_chess
                 return false; 
             }
 
-            void undo()
+            bool undo()
             {
-                /* 
-                const auto last_move_and_capture = move_history.back();
-                const move_t& last_move =  std::get<0>(last_move_and_capture);
-                
-                (*this)[last_move[0]] = (*this)[last_move[1]];
-                (*this)[last_move[1]] = std::get<1>(last_move_and_capture);
+                if(move_history.empty()) return false;
 
-                move_history.pop_back();
-                */
-
-                std::cout << "HEHE\n";
                 const auto last_move_and_capture = move_history.back();
                 const move_t& last_move = std::get<0>(last_move_and_capture);
                 static const std::function<void(void)> undo_cases[4] = {
@@ -517,8 +508,8 @@ namespace light_chess
                             (*this)[last_move[0]] = (*this)[last_move[1]];
                             (*this)[last_move[1]] = NONE;
                             const int8_t tmp = last_move[0][1];
-                            (*this)[{tmp,'a'}] = (*this)[{tmp,'d'}];
-                            (*this)[{tmp,'d'}] = NONE;
+                            (*this)[{'a',tmp}] = (*this)[{'d',tmp}];
+                            (*this)[{'d',tmp}] = NONE;
                         }
                         else
                         {
@@ -527,15 +518,15 @@ namespace light_chess
                             (*this)[last_move[0]] = (*this)[last_move[1]];
                             (*this)[last_move[1]] = NONE;
                             const int8_t tmp = last_move[0][1];
-                            (*this)[{tmp,'h'}] = (*this)[{tmp,'f'}];
-                            (*this)[{tmp,'f'}] = NONE;
+                            (*this)[{'h',tmp}] = (*this)[{'f',tmp}];
+                            (*this)[{'f',tmp}] = NONE;
                         }
                     },
                     [&] {
                         std::cout << "EN PASSANT UNDO\n";
                         (*this)[last_move[0]] = (*this)[last_move[1]];
                         (*this)[last_move[1]] = NONE;
-                        (*this)[{last_move[1][0],static_cast<char>(last_move[1][1]+(last_move[1][1]-last_move[0][1]))}] = std::get<1>(last_move_and_capture);
+                        (*this)[{last_move[1][0],static_cast<char>(last_move[1][1]-(last_move[1][1]-last_move[0][1]))}] = std::get<1>(last_move_and_capture);
 
                     },
                     [&] {
@@ -546,6 +537,9 @@ namespace light_chess
                 };
 
                 undo_cases[std::get<2>(last_move_and_capture)]();
+                move_history.pop_back();
+                
+                return true;
             }
 
             //std::vector<position> moves(const position pos);
@@ -692,17 +686,21 @@ namespace light_chess
 
     class chess_game
     {
-        private:
+        public:
             enum state : uint8_t { WHITE_TURN=WHITE, BLACK_TURN=BLACK, ENDED };
-            
+        
+        private:
             state current_state;
             board brd;
-        public:
 
+        public:
             chess_game() = default;
             chess_game(const board& t_brd) : current_state(state::WHITE_TURN), brd(t_brd) {}
 
-            /* constexpr */ board get_board() const { return brd; }
+            /* constexpr */ board& get_board() { return brd; }
+
+            state get_state() { return current_state; }
+            void set_state(state new_state) { current_state = new_state; }
 
             constexpr bool move(const position from, const position to)
             {
@@ -716,7 +714,6 @@ namespace light_chess
                             if(brd.is_check(static_cast<piece_color>(current_state)))
                             {
                                 std::cout << "IS CHECK\n";
-                                //TODO: Restore last move
                                 brd.undo();
                                 //TODO: check if is 'mate' and set the game state as ENDED
                                 if(false)

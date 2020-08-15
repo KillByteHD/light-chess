@@ -46,7 +46,10 @@ int main(void)
         }
         else if(in == "undo")
         {
-            gaem.get_board().undo();
+            if(gaem.get_board().undo())
+            {
+                gaem.set_state(static_cast<lc::chess_game::state>(COLOR_MASK ^ gaem.get_state()));
+            }
         }
         else
         {

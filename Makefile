@@ -39,7 +39,7 @@ directories:
 
 
 clean:
-	@rm -rf $(BUILDDIR) bin 
+	@rm -rf $(BUILDDIR) bin
 
 run: all
 	./$(TARGET)	
