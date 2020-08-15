@@ -15,10 +15,6 @@ namespace lc = light_chess;
 
 int main(void)
 {
-    //var_move_t tmp = std::make_pair(lc::make_move({'a','1'},{'a','2'}) , CASTLE_MOVE | LEFT_CASTLE);
-    //std::cout << std::is_same<lc::move_t, special_move_t>::value << "\n";
-    
-
     
     lc::chess_game gaem;
 
