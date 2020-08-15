@@ -21,12 +21,12 @@
 #define COLOR_MASK 0b1000
 #define VALUE_MASK 0b0111
 
-#define WHITE_SHORT_ROOK_MOVED_MASK 0b000001
-#define WHITE_KING_MOVED_MASK       0b000010
-#define WHITE_LONG_ROOK_MOVED_MASK  0b000100
-#define BLACK_SHORT_ROOK_MOVED_MASK 0b001000
-#define BLACK_KING_MOVED_MASK       0b010000
-#define BLACK_LONG_ROOK_MOVED_MASK  0b100000
+#define WHITE_SHORT_ROOK_MOVED_BIT 0b000001
+#define WHITE_KING_MOVED_BIT       0b000010
+#define WHITE_LONG_ROOK_MOVED_BIT  0b000100
+#define BLACK_SHORT_ROOK_MOVED_BIT 0b001000
+#define BLACK_KING_MOVED_BIT       0b010000
+#define BLACK_LONG_ROOK_MOVED_BIT  0b100000
 
 #define IN_BOUNDS(x) (0 <= x) && (x < 8)
 #define ARE_OPOSITE_COLOR(p1,p2) (p1 & COLOR_MASK) != (p2 & COLOR_MASK)
@@ -36,6 +36,7 @@ template<class> inline constexpr bool always_false_v = false;
 
 
 
+#define NORMAL_MOVE     0b00000000 // NEEDS: nothing
 #define CASTLE_MOVE     0b01000000 // NEEDS: left or right info
 #define EN_PASSANT_MOVE 0b10000000 // NEEDS: nothing
 #define PROMOTION_MOVE  0b11000000 // NEEDS: piece promoted to (or not)
@@ -102,8 +103,8 @@ namespace light_chess
                                                          0x0000000000000000 ,
                                                          0x0000000000000000 ,
                                                          0x0000000000000000 ,
-                                                         0x0101010109010100 ,
-                                                         0x0402030605030204 };
+                                                         0x0101010101010100 ,
+                                                         0x0400000605000004 };
 
                                                     //  0x0c0a0b0e0d0b0a0c
                                                     //  0x0909090909090909
@@ -144,6 +145,14 @@ namespace light_chess
 
             bool move(const position from, const position to)
             {
+                static const int8_t info_bits[2][3] = {
+                        { WHITE_LONG_ROOK_MOVED_BIT   , 
+                          WHITE_KING_MOVED_BIT         , 
+                          WHITE_SHORT_ROOK_MOVED_BIT  },
+                        { BLACK_LONG_ROOK_MOVED_BIT    , 
+                          BLACK_KING_MOVED_BIT         , 
+                          BLACK_SHORT_ROOK_MOVED_BIT  }};
+
                 // TODO: position validation
                 piece piece_to_move = (*this)[from];
 
@@ -279,6 +288,9 @@ namespace light_chess
                         }
                         case ROOK:
                         {
+                            const bool is_blacky = is_black(piece_to_move); 
+                            const auto& color_bits = info_bits[is_black(piece_to_move)];
+
                             const int8_t diff1 = diffs[0];
                             const int8_t positive_diff1 = std::abs(diff1);
                             const int8_t diff2 = diffs[1];
@@ -290,12 +302,30 @@ namespace light_chess
                                 for(int i = 1 ; i < positive_diff2 ; ++i)
                                 {
                                     const position ante_pos  = {from[0],static_cast<char>(from[1]-orientation_horizontal*i)};
-                                    if((*this)[ante_pos] != 0)
+                                    if((*this)[ante_pos] != 0)    
                                         goto INVALID_MOVE;
                                 }
                                 const piece piece_in_destiny = (*this)[to];
                                 if(piece_in_destiny == NONE || ARE_OPOSITE_COLOR(piece_to_move, piece_in_destiny))
-                                    goto MOVE;
+                                {
+                                    if(is_blacky)
+                                    {
+                                        if(from[0] == 'a' && from[1] == '8')
+                                            info_bitmask = info_bitmask | color_bits[0];
+                                        else if(from[0] == 'h' && from[1] == '8')
+                                            info_bitmask = info_bitmask | color_bits[2];
+                                    }
+                                    else
+                                    {
+                                        if(from[0] == 'a' && from[1] == '8')
+                                            info_bitmask = info_bitmask | color_bits[0];
+                                        else if(from[0] == 'h' && from[1] == '8')
+                                            info_bitmask = info_bitmask | color_bits[2];
+                                    }
+                                    
+                                    goto MOVE; 
+                                }
+                                    
                             }
                             else if(diff1 != 0 && diff2 == 0)
                             {
@@ -363,19 +393,69 @@ namespace light_chess
 
                             goto INVALID_MOVE;
                         }
-                        case KING: // TODO: 'Castling'
+                        case KING:
                         {
+                            const auto& color_bits = info_bits[is_black(piece_to_move)];
+
                             const int8_t diff1 = diffs[0];
-                            const int8_t positive_diff1 = std::abs(diff1);
                             const int8_t diff2 = diffs[1];
-                            const int8_t positive_diff2 = std::abs(diff2);
-                            if((positive_diff1 == 1 && (positive_diff2 == 1 || positive_diff2 == 0)) 
-                                || (positive_diff1 == 0 && positive_diff2 == 1))
+                            
+                            if(diff1 <= 1 && diff1 >= -1 && diff2 <= 1 && diff2 >= -1 
+                                && !(diff1 == diff2 && diff1 == 0))
+                            //if((positive_diff1 == 1 && (positive_diff2 == 1 || positive_diff2 == 0)) 
+                            //    || (positive_diff1 == 0 && positive_diff2 == 1))
                             {
                                 const piece piece_in_destiny = (*this)[to];
                                 if(piece_in_destiny == NONE || ARE_OPOSITE_COLOR(piece_to_move, piece_in_destiny))
+                                {   
+                                    info_bitmask = info_bitmask | color_bits[1];
                                     goto MOVE;
+                                }
                             }
+                            else if(diff2 == 0)
+                            {
+                                if(diff1 == -2 && !(info_bitmask & color_bits[1]) 
+                                              && !(info_bitmask & color_bits[0]) 
+                                              && (*this)[{static_cast<char>(from[0]+1),from[1]}] == NONE
+                                              && (*this)[{static_cast<char>(from[0]+2),from[1]}] == NONE
+                                              && (*this)[{static_cast<char>(from[0]+3),from[1]}] == (ROOK | (piece_to_move & COLOR_MASK)))
+                                {
+                                    move_t last_move{from,to};
+                                    move_history.emplace_back(last_move, NONE);
+                                    (*this)[to] = piece_to_move;
+                                    (*this)[from] = 0;
+                                    const position rook_position = {static_cast<char>(from[0]+3),from[1]};
+                                    const piece rook = (*this)[rook_position];
+                                    (*this)[{static_cast<char>(from[0]+1),from[1]}] = rook;
+                                    (*this)[rook_position] = NONE;
+
+                                    info_bitmask = info_bitmask | color_bits[1]; //TODO: REMOVE (PERHAPS NOT NEEDED)
+                                    return true; 
+                                    
+                                }
+                                else if(diff1 == 2 && !(info_bitmask & color_bits[1])
+                                                    && !(info_bitmask & color_bits[0])
+                                                    && (*this)[{static_cast<char>(from[0]-1),from[1]}] == NONE 
+                                                    && (*this)[{static_cast<char>(from[0]-2),from[1]}] == NONE
+                                                    && (*this)[{static_cast<char>(from[0]-3),from[1]}] == NONE
+                                                    && (*this)[{static_cast<char>(from[0]-4),from[1]}] == (ROOK | (piece_to_move & COLOR_MASK)))
+                                {
+                                    
+                                    move_t last_move{from,to};
+                                    move_history.emplace_back(last_move, NONE);
+                                    (*this)[to] = piece_to_move;
+                                    (*this)[from] = 0;
+                                    const position rook_position = {static_cast<char>(from[0]-4),from[1]};
+                                    const piece rook = (*this)[rook_position];
+                                    (*this)[{static_cast<char>(from[0]-1),from[1]}] = rook;
+                                    (*this)[rook_position] = NONE;
+
+                                    info_bitmask = info_bitmask | color_bits[1]; //TODO: REMOVE (PERHAPS NOT NEEDED)
+                                    return true;
+
+                                }
+                            }
+
                             goto INVALID_MOVE;
                         }
                     }
@@ -383,7 +463,6 @@ namespace light_chess
                     MOVE:
                     // If doesn't captures this variable will be NONE
                     piece capture = (*this)[to];
-                    //move_t last_move = move_t{ from , to };
                     move_t last_move{from,to};
 
                     move_history.emplace_back(last_move, capture);
