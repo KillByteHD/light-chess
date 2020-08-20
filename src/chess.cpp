@@ -10,9 +10,6 @@
 namespace lc = light_chess;
 
 
-
-
-
 int main(void)
 {
     
