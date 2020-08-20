@@ -46,6 +46,8 @@ run: all
 
 ########################### Tests ###########################
 
-
+ui: directories
+	$(CC) $(FLAGS) -lsfml-graphics -lsfml-window -lsfml-system $(SRCDIR)/sfml_ui.cpp -o $(TARGET)
+	./$(TARGET)
 
 #############################################################
