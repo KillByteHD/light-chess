@@ -8,7 +8,7 @@ namespace lc = light_chess;
 
 void render_board(sf::RenderWindow& window, const lc::board& board, std::array<sf::Sprite,6>& white_pieces, std::array<sf::Sprite,6>& black_pieces)
 {
-    static const std::array<int,6> board_to_sprite_idx = {5,3,2,4,2,1};
+    static const std::array<int,6> board_to_sprite_idx = {5,3,2,4,1,0};
     for(uint i = 0 ; i < 8 ; ++i)
     {
         for(uint j = 0 ; j < 8 ; ++j)
@@ -16,18 +16,11 @@ void render_board(sf::RenderWindow& window, const lc::board& board, std::array<s
             const lc::piece tmp = board.at(i,j);
             if(tmp != 0)
             {
-                if(lc::is_black(tmp))
-                {
-                    sf::Sprite& tmp_sprite = black_pieces[board_to_sprite_idx[tmp & VALUE_MASK]];
-                    tmp_sprite.setPosition(i*152,j*152);
-                    window.draw(tmp_sprite);
-                }
-                else
-                {
-                    sf::Sprite& tmp_sprite = white_pieces[board_to_sprite_idx[tmp & VALUE_MASK]];
-                    tmp_sprite.setPosition(i*152,j*152);
-                    window.draw(tmp_sprite);
-                }
+                
+                sf::Sprite& tmp_sprite = lc::is_black(tmp) ? black_pieces[board_to_sprite_idx[(tmp & VALUE_MASK)-1]]
+                    : white_pieces[board_to_sprite_idx[(tmp & VALUE_MASK)-1]];
+                tmp_sprite.setPosition(j*100,i*100);
+                window.draw(tmp_sprite);
             }
         }
     }
@@ -58,8 +51,7 @@ int main()
         auto& sprite2 = black_pieces[i];
         sprite2.setTexture(tex);
         sprite2.setTextureRect(sf::IntRect(0 + 152*i, 152, 152, 152));
-        const auto& scale = sprite2.getScale();
-        sprite2.setScale(152/100,152/100);
+        sprite2.setScale(100.f/152.f,100.f/152.f);
         //std::cout << sprite2.getScale().x << " , " << sprite2.getScale().y << '\n';
     }
 
@@ -82,6 +74,9 @@ int main()
     }
 
 
+    bool left_pressed = false;
+
+
     while (window.isOpen())
     {
         sf::Event event;
@@ -89,6 +84,26 @@ int main()
         {
             if (event.type == sf::Event::Closed)
                 window.close();
+            else if(event.type == sf::Event::MouseButtonPressed)
+            {
+                if(event.mouseButton.button == sf::Mouse::Left)
+                {
+                    std::cout << "Pressed\n";
+                    left_pressed = true;
+                    const auto mouse_pos = sf::Mouse::getPosition();
+                    std::cout << "(" << mouse_pos.x << "," << mouse_pos.y << ")" << std::endl;
+                }
+            }
+            else if(event.type == sf::Event::MouseButtonReleased)
+            {
+                if(event.mouseButton.button == sf::Mouse::Left)
+                {
+                    std::cout << "Released\n";
+                    left_pressed = false;
+                    
+                }
+                
+            }
         }
 
         window.clear(clear_color);
