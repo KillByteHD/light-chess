@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 
+
 #include "chess.hpp"
 
 namespace lc = light_chess;
@@ -26,10 +27,13 @@ void render_board(sf::RenderWindow& window, const lc::board& board, std::array<s
     }
 }
 
+#include <unordered_map>
 
 int main()
 {
+
     sf::RenderWindow window(sf::VideoMode(800, 800), "LightChess");
+
     const sf::Color clear_color(sf::Color(21, 94, 133));
 
     sf::Texture tex;
@@ -41,19 +45,23 @@ int main()
 
     std::array<sf::Sprite,6> white_pieces;
     std::array<sf::Sprite,6> black_pieces;
+
     for(int i = 0 ; i < 6 ; ++i)
     {
         auto& sprite1 = white_pieces[i];
         sprite1.setTexture(tex);
         sprite1.setTextureRect(sf::IntRect(0 + 152*i, 0, 152, 152));
-        sprite1.setScale(100.f/152.f,100.f/152.f/* 100/152,100/152 */);
+        
+        const float new_scale = 100.f/152.f;
+        sprite1.setScale(new_scale,new_scale);
         
         auto& sprite2 = black_pieces[i];
         sprite2.setTexture(tex);
         sprite2.setTextureRect(sf::IntRect(0 + 152*i, 152, 152, 152));
-        sprite2.setScale(100.f/152.f,100.f/152.f);
+        sprite2.setScale(new_scale,new_scale);
         //std::cout << sprite2.getScale().x << " , " << sprite2.getScale().y << '\n';
     }
+
 
     lc::chess_game gaem;
 
@@ -115,6 +123,7 @@ int main()
         //window.draw(white_pieces[3]);
         window.display();
     }
+
 
     return 0;
 }

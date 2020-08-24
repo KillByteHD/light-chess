@@ -38,7 +38,6 @@
 template<class> inline constexpr bool always_false_v = false;
 
 
-
 #define NORMAL_MOVE     0 // NEEDS: nothing
 #define CASTLING_MOVE   1 // NEEDS: left or right info
 #define EN_PASSANT_MOVE 2 // NEEDS: nothing
@@ -225,38 +224,7 @@ namespace light_chess
                                         info_bit_state = EN_PASSANT_MOVE;
                                         goto MOVE;
                                     }
-                                    
                                 }
-
-                                /* if(((*this)[to] != NONE && ARE_OPOSITE_COLOR(piece_to_move,(*this)[to])))
-                                    goto MOVE;
-                                else 
-                                {
-                                    const var_move_t last_move_var = std::get<0>(move_history.back());
-                                    const auto last_move_ptr = std::get_if<move_t>(&last_move_var);
-
-                                    if(last_move_ptr == nullptr)
-                                    {
-                                        goto INVALID_MOVE;
-                                    }
-
-                                    const move_t& last_move = *last_move_ptr;
-
-                                    std::array<int8_t,2> diff_pawn_n_last_piece = diff(from,last_move[1]);
-
-                                    if((*this)[to] == NONE && (std::abs(diff_pawn_n_last_piece[0]) == 1 &&
-                                        diff_pawn_n_last_piece[1] == 0) && 
-                                        (*this)[last_move[1]] == make_pawn((piece_to_move & COLOR_MASK) ^ COLOR_MASK))
-                                    {
-                                        // 'En passant' condiitons:
-                                        // Last piece moved must be oposite color pawn
-                                        // Must be at the side of the current moving pawn
-                                        (*this)[last_move[1]] = NONE;
-                                        goto MOVE;
-                                    }
-                                    
-                                } */
-                                
                             }
 
                             goto INVALID_MOVE;
